@@ -16,6 +16,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    repositories {
+        maven {
+            url "https://jitpack.io"
+        }
+    }
+
+    dependencies {
+        implementation 'com.github.recruit-lifestyle:PlayPauseButton:1.0'
+        implementation 'com.android.support:cardview-v7:27.1.1'
+    }
 }
 
 dependencies {
