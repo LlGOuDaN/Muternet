@@ -3,17 +3,12 @@
 
     <item
         android:id="@+id/server"
-        android:icon="@android:drawable/ic_input_add"
+        android:icon="@drawable/motion"
         />
 
     <item
         android:id="@+id/client"
-        android:icon="@android:drawable/ic_menu_delete"
-        />
-s
-    <item
-        android:id="@+id/navigation_profile"
-        android:icon="@android:drawable/ic_input_delete"
+        android:icon="@drawable/infrared"
         />
 
 </menu>

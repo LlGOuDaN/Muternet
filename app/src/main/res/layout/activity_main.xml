@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="team.edu.app.muternet.Activity.MainActivity"
-    android:background="#E6000000"
+    android:background="@color/colorPrimary"
     >
 
     <FrameLayout
@@ -30,7 +30,7 @@
         app:menu="@menu/buttom_navigation"
         app:itemIconTint="@color/nav_bar"
         app:itemTextColor="@color/nav_bar"
-        app:itemBackground="@color/grey">
+        >
 
     </android.support.design.widget.BottomNavigationView>
 
