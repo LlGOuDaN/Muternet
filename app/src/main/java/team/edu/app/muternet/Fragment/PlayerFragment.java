@@ -96,7 +96,6 @@ public class PlayerFragment extends Fragment {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if(mediaPlayer!=null && fromUser){
                     mediaPlayer.seekTo(progress*1000);
-                    mediaPlayer.start();
                 }
                 int duration = mediaPlayer.getDuration()/1000;
                 int currentPosition = mediaPlayer.getCurrentPosition()/1000;
