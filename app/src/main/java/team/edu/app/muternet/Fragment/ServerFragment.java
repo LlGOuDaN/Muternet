@@ -1,19 +1,38 @@
 package team.edu.app.muternet.Fragment;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Calendar;
+import java.util.Enumeration;
 
 import team.edu.app.muternet.R;
 
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link ServerFragment.OnFragmentInteractionListener} interface
+ * {@link ServerFragment.OnServerFragmentInteractionListener} interface
  * to handle interaction events.
  * Use the {@link ServerFragment#newInstance} factory method to
  * create an instance of this fragment.
@@ -28,7 +47,22 @@ public class ServerFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
+
+    private ServerSocket serverSocket;
+    private Socket tempClientSocket;
+    Thread serverThread = null;
+    public static final int SERVER_PORT = 9999;
+    private LinearLayout msgList;
+    private Handler handler;
+    private int greenColor = Color.GREEN;
+    private EditText edMessage;
+
+    Button startServer = null;
+    Button sendData = null;
+
     private OnServerFragmentInteractionListener mListener;
+    private TextView textView;
+    private View view;
 
     public ServerFragment() {
         // Required empty public constructor
@@ -59,13 +93,150 @@ public class ServerFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+        getActivity().setTitle("Server");
+
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_server, container, false);
+        view = inflater.inflate(R.layout.fragment_server, container, false);
+        handler = new Handler();
+        msgList = view.findViewById(R.id.msgList);
+        startServer = (Button)view.findViewById(R.id.start_server);
+        startServer.setOnClickListener(new Button.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                msgList.removeAllViews();
+                showMessage("Server Started. " + getIpAddress(), Color.WHITE);
+                serverThread = new Thread(new ServerThread());
+                serverThread.start();
+                return;
+            }
+        });
+        sendData = (Button)view.findViewById(R.id.send_data);
+        edMessage = view.findViewById(R.id.edMessage);
+        return view;
+    }
+    public TextView textView(String message, int color) {
+        if (null == message || message.trim().isEmpty()) {
+            message = "<Empty Message>";
+        }
+        TextView tv = new TextView(this.getContext());
+        tv.setTextColor(color);
+        tv.setText(message + " [" + Calendar.getInstance().getTime() +"]");
+        tv.setTextSize(20);
+        tv.setPadding(0, 5, 0, 0);
+        return tv;
+    }
+
+    public void showMessage(final String message, final int color) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                msgList.addView(textView(message, color));
+            }
+        });
+    }
+
+    class ServerThread implements  Runnable{
+
+        @Override
+        public void run() {
+            Socket socket;
+            try{
+                InetAddress addr = InetAddress.getByName("127.0.0.1");
+// or
+
+// and now you can pass it to your socket-constructor
+                ServerSocket server = new ServerSocket(9999, 50, addr);
+                view.findViewById(R.id.start_server).setVisibility(View.GONE);
+            } catch (IOException e) {
+                e.printStackTrace();
+                showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
+            }
+            if (serverSocket != null){
+                while (!Thread.currentThread().isInterrupted()){
+                    try {
+                        socket = serverSocket.accept();
+                        CommunicationThread commThread = new CommunicationThread(socket);
+                        new Thread(commThread).start();
+                    }catch (IOException e){
+                        e.printStackTrace();
+                        showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
+                    }
+                }
+            }
+        }
+    }
+
+    class CommunicationThread implements Runnable{
+        private Socket clientSocket;
+        private BufferedReader input;
+
+        public CommunicationThread(Socket clientSocket){
+            this.clientSocket = clientSocket;
+            tempClientSocket = clientSocket;
+            try{
+                this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
+            }catch (IOException e){
+                e.printStackTrace();
+                showMessage("Error Connecting to Client!!", Color.RED);
+            }showMessage("Connected to Client!!", greenColor)
+            ;
+        }
+        @Override
+        public void run() {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    String read = input.readLine();
+                    if (null == read || "Disconnect".contentEquals(read)) {
+                        Thread.interrupted();
+                        read = "Client Disconnected";
+                        showMessage("Client : " + read, greenColor);
+                        break;
+                    }
+                    showMessage("Client : " + read, greenColor);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
+    private String getIpAddress() {
+        String ip = "";
+        try {
+            Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface
+                    .getNetworkInterfaces();
+            while (enumNetworkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = enumNetworkInterfaces
+                        .nextElement();
+                Enumeration<InetAddress> enumInetAddress = networkInterface
+                        .getInetAddresses();
+                while (enumInetAddress.hasMoreElements()) {
+                    InetAddress inetAddress = enumInetAddress.nextElement();
+
+                    if (inetAddress.isSiteLocalAddress()) {
+                        ip += "SiteLocalAddress: "
+                                + inetAddress.getHostAddress() + "\n";
+                    }
+
+                }
+
+            }
+
+        } catch (SocketException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            ip += "Something Wrong! " + e.toString() + "\n";
+        }
+
+        return ip;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
