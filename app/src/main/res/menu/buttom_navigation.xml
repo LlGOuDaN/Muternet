@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/server"
+        android:icon="@drawable/motion"
+        />
+
+    <item
+        android:id="@+id/client"
+        android:icon="@drawable/infrared"
+        />
+
+</menu>
