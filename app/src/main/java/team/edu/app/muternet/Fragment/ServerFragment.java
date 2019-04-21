@@ -16,8 +16,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
@@ -56,7 +59,6 @@ public class ServerFragment extends Fragment {
     private Handler handler;
     private int greenColor = Color.GREEN;
     private EditText edMessage;
-    private ServerSocket server;
 
     Button startServer = null;
     Button sendData = null;
@@ -106,8 +108,8 @@ public class ServerFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_server, container, false);
         handler = new Handler();
         msgList = view.findViewById(R.id.msgList);
-        startServer = (Button)view.findViewById(R.id.start_server);
-        startServer.setOnClickListener(new Button.OnClickListener(){
+        startServer = (Button) view.findViewById(R.id.start_server);
+        startServer.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -119,8 +121,39 @@ public class ServerFragment extends Fragment {
             }
         });
         sendData = (Button)view.findViewById(R.id.send_data);
+        sendData.setOnClickListener(new Button.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                String msg = edMessage.getText().toString().trim();
+                showMessage("Server : " + msg, Color.BLUE);
+                sendMessage(msg);
+            }
+        });
         edMessage = view.findViewById(R.id.edMessage);
         return view;
+    }
+    private void sendMessage(final String message) {
+        try {
+            if (null != tempClientSocket) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        PrintWriter out = null;
+                        try {
+                            out = new PrintWriter(new BufferedWriter(
+                                    new OutputStreamWriter(tempClientSocket.getOutputStream())),
+                                    true);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        out.println(message);
+                    }
+                }).start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     public TextView textView(String message, int color) {
         if (null == message || message.trim().isEmpty()) {
@@ -143,29 +176,24 @@ public class ServerFragment extends Fragment {
         });
     }
 
-    class ServerThread implements  Runnable{
+    class ServerThread implements Runnable {
 
         @Override
         public void run() {
             Socket socket;
-            try{
-//                InetAddress addr = InetAddress.getByName("127.0.0.1");
-//// or
-//
-//// and now you can pass it to your socket-constructor
-                 serverSocket = new ServerSocket(9999);
-//                view.findViewById(R.id.start_server).setVisibility(View.GONE);
+            try {
+                serverSocket = new ServerSocket(9999);
             } catch (IOException e) {
                 e.printStackTrace();
                 showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
             }
-            if (serverSocket != null){
-                while (!Thread.currentThread().isInterrupted()){
+            if (serverSocket != null) {
+                while (!Thread.currentThread().isInterrupted()) {
                     try {
                         socket = serverSocket.accept();
                         CommunicationThread commThread = new CommunicationThread(socket);
                         new Thread(commThread).start();
-                    }catch (IOException e){
+                    } catch (IOException e) {
                         e.printStackTrace();
                         showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
                     }
@@ -174,21 +202,23 @@ public class ServerFragment extends Fragment {
         }
     }
 
-    class CommunicationThread implements Runnable{
+    class CommunicationThread implements Runnable {
         private Socket clientSocket;
         private BufferedReader input;
 
-        public CommunicationThread(Socket clientSocket){
+        public CommunicationThread(Socket clientSocket) {
             this.clientSocket = clientSocket;
             tempClientSocket = clientSocket;
-            try{
+            try {
                 this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
-            }catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
                 showMessage("Error Connecting to Client!!", Color.RED);
-            }showMessage("Connected to Client!!", greenColor)
+            }
+            showMessage("Connected to Client!!", greenColor)
             ;
         }
+
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
@@ -261,6 +291,12 @@ public class ServerFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        try {
+            if (serverSocket != null)
+                serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         mListener = null;
     }
 
