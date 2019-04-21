@@ -56,6 +56,7 @@ public class ServerFragment extends Fragment {
     private Handler handler;
     private int greenColor = Color.GREEN;
     private EditText edMessage;
+    private ServerSocket server;
 
     Button startServer = null;
     Button sendData = null;
@@ -148,12 +149,12 @@ public class ServerFragment extends Fragment {
         public void run() {
             Socket socket;
             try{
-                InetAddress addr = InetAddress.getByName("127.0.0.1");
-// or
-
-// and now you can pass it to your socket-constructor
-                ServerSocket server = new ServerSocket(9999, 50, addr);
-                view.findViewById(R.id.start_server).setVisibility(View.GONE);
+//                InetAddress addr = InetAddress.getByName("127.0.0.1");
+//// or
+//
+//// and now you can pass it to your socket-constructor
+                 serverSocket = new ServerSocket(9999);
+//                view.findViewById(R.id.start_server).setVisibility(View.GONE);
             } catch (IOException e) {
                 e.printStackTrace();
                 showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
