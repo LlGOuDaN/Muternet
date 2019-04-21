@@ -16,8 +16,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
@@ -111,15 +114,46 @@ public class ServerFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 msgList.removeAllViews();
-                showMessage("Server Started. " + getIpAddress(), Color.WHITE);
+                showMessage("Server Started. " , Color.WHITE);
                 serverThread = new Thread(new ServerThread());
                 serverThread.start();
                 return;
             }
         });
         sendData = (Button)view.findViewById(R.id.send_data);
+        sendData.setOnClickListener(new Button.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                String msg = edMessage.getText().toString().trim();
+                showMessage("Server : " + msg, Color.BLUE);
+                sendMessage(msg);
+            }
+        });
         edMessage = view.findViewById(R.id.edMessage);
         return view;
+    }
+    private void sendMessage(final String message) {
+        try {
+            if (null != tempClientSocket) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        PrintWriter out = null;
+                        try {
+                            out = new PrintWriter(new BufferedWriter(
+                                    new OutputStreamWriter(tempClientSocket.getOutputStream())),
+                                    true);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        out.println(message);
+                    }
+                }).start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     public TextView textView(String message, int color) {
         if (null == message || message.trim().isEmpty()) {
@@ -148,11 +182,11 @@ public class ServerFragment extends Fragment {
         public void run() {
             Socket socket;
             try{
-                InetAddress addr = InetAddress.getByName("127.0.0.1");
-// or
+
 
 // and now you can pass it to your socket-constructor
-                ServerSocket server = new ServerSocket(9999, 50, addr);
+                ServerSocket server = new ServerSocket(SERVER_PORT);
+
                 view.findViewById(R.id.start_server).setVisibility(View.GONE);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -162,6 +196,7 @@ public class ServerFragment extends Fragment {
                 while (!Thread.currentThread().isInterrupted()){
                     try {
                         socket = serverSocket.accept();
+                        showMessage(socket.getRemoteSocketAddress().toString(), Color.WHITE);
                         CommunicationThread commThread = new CommunicationThread(socket);
                         new Thread(commThread).start();
                     }catch (IOException e){
@@ -208,36 +243,7 @@ public class ServerFragment extends Fragment {
         }
     }
 
-    private String getIpAddress() {
-        String ip = "";
-        try {
-            Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface
-                    .getNetworkInterfaces();
-            while (enumNetworkInterfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = enumNetworkInterfaces
-                        .nextElement();
-                Enumeration<InetAddress> enumInetAddress = networkInterface
-                        .getInetAddresses();
-                while (enumInetAddress.hasMoreElements()) {
-                    InetAddress inetAddress = enumInetAddress.nextElement();
 
-                    if (inetAddress.isSiteLocalAddress()) {
-                        ip += "SiteLocalAddress: "
-                                + inetAddress.getHostAddress() + "\n";
-                    }
-
-                }
-
-            }
-
-        } catch (SocketException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            ip += "Something Wrong! " + e.toString() + "\n";
-        }
-
-        return ip;
-    }
 
     // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
