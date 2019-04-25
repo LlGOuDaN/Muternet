@@ -25,17 +25,19 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         fragmentManager = getSupportFragmentManager();
-        FragmentTransaction ft = fragmentManager.beginTransaction();
+        final FragmentTransaction ft = fragmentManager.beginTransaction();
         ft.add(R.id.fragment_container, PlayerFragment.newInstance());
         ft.commit();
 
-        bottomNavigation = (BottomNavigationView)findViewById(R.id.buttom_navigation);
-//        bottomNavigation.inflateMenu(R.menu.buttom_navigation);
+        bottomNavigation = findViewById(R.id.buttom_navigation);
         bottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 int id = item.getItemId();
                 switch (id){
+                    case R.id.player:
+                        fragment = PlayerFragment.getInstance();
+                        break;
                     case R.id.server:
                         fragment = new ServerFragment();
                         break;
@@ -43,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
                         fragment = new ClientFragment();
                         break;
                 }
-                final FragmentTransaction transaction = fragmentManager.beginTransaction();
+                FragmentTransaction transaction = fragmentManager.beginTransaction();
                 transaction.replace(R.id.fragment_container, fragment).commit();
                 return true;
             }

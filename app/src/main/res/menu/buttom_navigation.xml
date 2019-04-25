@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <item
+        android:id="@+id/player"
+        android:icon="@drawable/ic_music_note_black_48dp"
+        tools:ignore="MenuTitle" />
     <item
         android:id="@+id/server"
         android:icon="@drawable/motion"
-        />
+        tools:ignore="MenuTitle" />
 
     <item
         android:id="@+id/client"
         android:icon="@drawable/infrared"
-        />
-
+        tools:ignore="MenuTitle" />
 </menu>
