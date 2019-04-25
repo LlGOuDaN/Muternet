@@ -1,9 +1,11 @@
 package team.edu.app.muternet.Fragment;
 
+import android.Manifest;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -17,10 +19,14 @@ import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.File;
+import java.io.OutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
@@ -29,6 +35,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Calendar;
 import java.util.Enumeration;
+import java.util.*;
 
 import team.edu.app.muternet.R;
 
@@ -54,7 +61,7 @@ public class ServerFragment extends Fragment {
     private ServerSocket serverSocket;
     private Socket tempClientSocket;
     Thread serverThread = null;
-    public static final int SERVER_PORT = 9999;
+    public static final int SERVER_PORT = 9997;
     private LinearLayout msgList;
     private Handler handler;
     private int greenColor = Color.GREEN;
@@ -114,7 +121,8 @@ public class ServerFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 msgList.removeAllViews();
-                showMessage("Server Started. " + getIpAddress(), Color.WHITE);
+                showMessage("Server Started. ", Color.WHITE);
+                showMessage("Server ip: " + getIPAddress(true) + ": " + SERVER_PORT , Color.GREEN);
                 serverThread = new Thread(new ServerThread());
                 serverThread.start();
                 return;
@@ -133,6 +141,33 @@ public class ServerFragment extends Fragment {
         edMessage = view.findViewById(R.id.edMessage);
         return view;
     }
+    public static String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        boolean isIPv4 = sAddr.indexOf(':')<0;
+
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) { } // for now eat exceptions
+        return "";
+    }
+
     private void sendMessage(final String message) {
         try {
             if (null != tempClientSocket) {
@@ -182,23 +217,91 @@ public class ServerFragment extends Fragment {
         public void run() {
             Socket socket;
             try {
-                serverSocket = new ServerSocket(9999);
+                serverSocket = new ServerSocket(SERVER_PORT);
+                socket = serverSocket.accept();
+                FileTransferThread fileThread = new FileTransferThread(socket);
+                new Thread(fileThread).start();
             } catch (IOException e) {
                 e.printStackTrace();
                 showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
             }
             if (serverSocket != null) {
-                while (!Thread.currentThread().isInterrupted()) {
+                //while (!Thread.currentThread().isInterrupted()) {
                     try {
                         socket = serverSocket.accept();
                         CommunicationThread commThread = new CommunicationThread(socket);
                         new Thread(commThread).start();
+
                     } catch (IOException e) {
                         e.printStackTrace();
                         showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
                     }
-                }
+               // }
             }
+        }
+    }
+    class FileTransferThread implements Runnable{
+        private Socket clientSocket;
+        private BufferedReader input;
+        private byte buffer[];
+        private int count;
+
+        public FileTransferThread(Socket clientSocket){
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+            this.clientSocket = clientSocket;
+            try {
+                this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+                showMessage("File Transfer Error.", Color.RED);
+            }
+            showMessage("Transfering File.", greenColor);
+        }
+
+        @Override
+        public void run(){
+                ServerSocket socket;
+                FileInputStream in;
+
+                File soundFile = new File(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
+                showMessage("File: " + soundFile, greenColor);
+
+                try{
+                    in = new FileInputStream(soundFile);
+                }catch(Exception e) {
+                    in = null;
+                    showMessage("In Error", Color.RED);
+                }
+
+                if (clientSocket.isBound()) {
+                    OutputStream out = null;
+
+                    try{
+                        out = clientSocket.getOutputStream();
+                    }catch(Exception e){
+                        showMessage("Out Error", Color.RED);
+                    }
+
+
+                    buffer = new byte[(int)soundFile.length()];
+
+                    showMessage("File Transfering...",Color.WHITE);
+
+                    try {
+                        while ((count = in.read(buffer)) != -1)
+                            out.write(buffer, 0, count);
+                    } catch(Exception e){
+                        showMessage("Transfer Error", Color.RED);
+                    }
+                    showMessage("Done.", Color.WHITE);
+
+                    try {
+                        out.flush();
+                        clientSocket.close();
+                        out.close();
+                    } catch(Exception e){}
+
+                }
         }
     }
 
@@ -239,36 +342,36 @@ public class ServerFragment extends Fragment {
         }
     }
 
-    private String getIpAddress() {
-        String ip = "";
-        try {
-            Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface
-                    .getNetworkInterfaces();
-            while (enumNetworkInterfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = enumNetworkInterfaces
-                        .nextElement();
-                Enumeration<InetAddress> enumInetAddress = networkInterface
-                        .getInetAddresses();
-                while (enumInetAddress.hasMoreElements()) {
-                    InetAddress inetAddress = enumInetAddress.nextElement();
-
-                    if (inetAddress.isSiteLocalAddress()) {
-                        ip += "SiteLocalAddress: "
-                                + inetAddress.getHostAddress() + "\n";
-                    }
-
-                }
-
-            }
-
-        } catch (SocketException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            ip += "Something Wrong! " + e.toString() + "\n";
-        }
-
-        return ip;
-    }
+//    private String getIpAddress() {
+//        String ip = "";
+//        try {
+//            Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface
+//                    .getNetworkInterfaces();
+//            while (enumNetworkInterfaces.hasMoreElements()) {
+//                NetworkInterface networkInterface = enumNetworkInterfaces
+//                        .nextElement();
+//                Enumeration<InetAddress> enumInetAddress = networkInterface
+//                        .getInetAddresses();
+//                while (enumInetAddress.hasMoreElements()) {
+//                    InetAddress inetAddress = enumInetAddress.nextElement();
+//
+//                    if (inetAddress.isSiteLocalAddress()) {
+//                        ip += "SiteLocalAddress: "
+//                                + inetAddress.getHostAddress() + "\n";
+//                    }
+//
+//                }
+//
+//            }
+//
+//        } catch (SocketException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//            ip += "Something Wrong! " + e.toString() + "\n";
+//        }
+//
+//        return ip;
+//    }
 
     // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {

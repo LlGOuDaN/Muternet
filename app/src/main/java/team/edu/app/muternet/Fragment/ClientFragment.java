@@ -1,11 +1,15 @@
 package team.edu.app.muternet.Fragment;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +29,15 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Calendar;
 
+import team.edu.app.muternet.Activity.MainActivity;
 import team.edu.app.muternet.R;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.File;
+import java.net.Socket;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -45,8 +57,8 @@ public class ClientFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    public static final int SERVERPORT = 9999;
-    public static final String SERVER_IP = "10.0.2.2";
+    public static final int SERVERPORT = 6668;
+    public static final String SERVER_IP = "137.112.249.21";
     private ClientThread clientThread;
     private Thread thread;
     private LinearLayout msgList;
@@ -131,16 +143,19 @@ public class ClientFragment extends Fragment {
 
         private Socket socket;
         private BufferedReader input;
+        private byte buffer[] = new byte[2048];
+        private String message;
 
         @Override
         public void run() {
+
 
             try {
                 InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
                 socket = new Socket(serverAddr, SERVERPORT);
 
                 while (!Thread.currentThread().isInterrupted()) {
-
+    /*
                     this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     String message = input.readLine();
                     if (null == message || "Disconnect".contentEquals(message)) {
@@ -148,8 +163,42 @@ public class ClientFragment extends Fragment {
                         message = "Server Disconnected.";
                         showMessage(message, Color.RED);
                         break;
+                    }*/
+                    if (socket != null && socket.isConnected()) {
+                        InputStream inputStream = socket.getInputStream();
+                        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                        requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+
+
+                        while (inputStream != null) {
+                            if (inputStream.available() > 0) {
+                                InputStream bufferedIn = new BufferedInputStream(inputStream);
+
+                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
+                                FileOutputStream fos = new FileOutputStream(file);
+                                BufferedOutputStream bufferedOut = new BufferedOutputStream(fos);
+
+
+                                message = "Receieving File.";
+                                showMessage(message, Color.BLUE);
+
+                                int bytesRead;
+                                while ((bytesRead= bufferedIn.read(buffer)) > 0)
+                                {
+                                    bufferedOut.write(buffer, 0, bytesRead);
+                                }
+
+                                fos.close();
+                                message = "File Transfer Complete.";
+                                showMessage(message, Color.BLUE);
+                            }
+                        }
                     }
+                    socket.close();
+                    String message = "Exiting...";
                     showMessage("Server: " + message, clientTextColor);
+
+                    Thread.interrupted();
                 }
 
             } catch (UnknownHostException e1) {
