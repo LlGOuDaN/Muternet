@@ -57,8 +57,8 @@ public class ClientFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    public static final int SERVERPORT = 6668;
-    public static final String SERVER_IP = "137.112.249.21";
+    public static final int SERVERPORT = 9997;
+    public static final String SERVER_IP = "137.112.226.155";
     private ClientThread clientThread;
     private Thread thread;
     private LinearLayout msgList;
