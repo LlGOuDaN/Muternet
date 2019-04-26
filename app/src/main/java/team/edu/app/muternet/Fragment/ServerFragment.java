@@ -61,11 +61,12 @@ public class ServerFragment extends Fragment {
     private ServerSocket serverSocket;
     private Socket tempClientSocket;
     Thread serverThread = null;
-    public static final int SERVER_PORT = 9997;
+    private int SERVER_PORT = 9997;
     private LinearLayout msgList;
     private Handler handler;
     private int greenColor = Color.GREEN;
     private EditText edMessage;
+    private EditText IP_Port;
 
     Button startServer = null;
     Button sendData = null;
@@ -115,12 +116,14 @@ public class ServerFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_server, container, false);
         handler = new Handler();
         msgList = view.findViewById(R.id.msgList);
+        IP_Port = view.findViewById(R.id.IP_Port);
         startServer = (Button) view.findViewById(R.id.start_server);
         startServer.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 msgList.removeAllViews();
+                SERVER_PORT = Integer.parseInt(IP_Port.getText().toString());
                 showMessage("Server Started. ", Color.WHITE);
                 showMessage("Server ip: " + getIPAddress(true) + ": " + SERVER_PORT , Color.GREEN);
                 serverThread = new Thread(new ServerThread());
@@ -247,6 +250,7 @@ public class ServerFragment extends Fragment {
         private int count;
 
         public FileTransferThread(Socket clientSocket){
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
             this.clientSocket = clientSocket;
             try {
@@ -263,13 +267,14 @@ public class ServerFragment extends Fragment {
                 ServerSocket socket;
                 FileInputStream in;
 
-                File soundFile = new File(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
+                File soundFile = new File(Environment.getExternalStorageDirectory().toString() + "/Music/music.mp3");
                 showMessage("File: " + soundFile, greenColor);
 
                 try{
                     in = new FileInputStream(soundFile);
                 }catch(Exception e) {
                     in = null;
+                    e.printStackTrace();
                     showMessage("In Error", Color.RED);
                 }
 

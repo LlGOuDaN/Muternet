@@ -57,8 +57,8 @@ public class ClientFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
-    public static final int SERVERPORT = 6668;
-    public static final String SERVER_IP = "137.112.249.21";
+    private int SERVERPORT = 6668;
+    private String SERVER_IP = "137.112.219.25";
     private ClientThread clientThread;
     private Thread thread;
     private LinearLayout msgList;
@@ -66,6 +66,8 @@ public class ClientFragment extends Fragment {
     private int clientTextColor = Color.GREEN;
     private EditText edMessage;
     private OnClientFragmentInteractionListener mListener;
+    private EditText IP_Addr;
+    private EditText IP_Port;
     Button connectServer;
     Button sendData;
 
@@ -110,17 +112,21 @@ public class ClientFragment extends Fragment {
         handler = new Handler();
         msgList = view.findViewById(R.id.msgList);
         edMessage = view.findViewById(R.id.edMessage);
+        IP_Addr = view.findViewById(R.id.IP_Addr);
+        IP_Port = view.findViewById(R.id.IP_Port);
         connectServer = view.findViewById(R.id.connect_server);
         connectServer.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 msgList.removeAllViews();
-                showMessage("Connecting to Server...", clientTextColor);
+                SERVERPORT = Integer.parseInt(IP_Port.getText().toString());
+                SERVER_IP = IP_Addr.getText().toString();
+                showMessage("Connecting to Server at." + SERVER_IP +": "+SERVERPORT, Color.WHITE);
                 clientThread = new ClientThread();
                 thread = new Thread(clientThread);
                 thread.start();
-                showMessage("Connected to Server...", clientTextColor);
+
                 return;
             }
         });
@@ -165,6 +171,7 @@ public class ClientFragment extends Fragment {
                         break;
                     }*/
                     if (socket != null && socket.isConnected()) {
+                        showMessage("Server Connected", clientTextColor);
                         InputStream inputStream = socket.getInputStream();
                         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
                         requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
@@ -174,7 +181,7 @@ public class ClientFragment extends Fragment {
                             if (inputStream.available() > 0) {
                                 InputStream bufferedIn = new BufferedInputStream(inputStream);
 
-                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
+                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/sampleMusic.mp3");
                                 FileOutputStream fos = new FileOutputStream(file);
                                 BufferedOutputStream bufferedOut = new BufferedOutputStream(fos);
 
