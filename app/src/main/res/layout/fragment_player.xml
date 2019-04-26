@@ -109,14 +109,12 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="20dp"
-            android:gravity="center_horizontal"
-            >
+            android:gravity="center_horizontal">
 
             <jp.co.recruit_lifestyle.android.widget.PlayPauseButton
                 android:id="@+id/play_pause_button"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                />
+                android:layout_width="33dp"
+                android:layout_height="33dp" />
 
         </LinearLayout>
 
