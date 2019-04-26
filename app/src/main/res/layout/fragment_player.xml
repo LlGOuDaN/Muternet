@@ -34,7 +34,7 @@
                         android:id="@+id/image_view"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:src="@drawable/b21c8701a18b87d6c704b3840f0828381e30fde3"
+                        android:src="@drawable/disk"
                         android:scaleType="centerCrop"/>
                 </android.support.v7.widget.CardView>
 
@@ -43,9 +43,9 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/file_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Faded"
             android:textColor="#FFF"
             android:textSize="24sp"
             android:layout_marginTop="10dp"
@@ -54,7 +54,6 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Alan Walker"
             android:textSize="20sp"
             android:textColor="#FFF"
             android:layout_marginTop="10dp"
