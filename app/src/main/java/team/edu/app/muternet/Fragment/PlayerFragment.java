@@ -29,18 +29,9 @@ public class PlayerFragment extends Fragment {
     MediaPlayer mediaPlayer;
     PlayPauseButton playPauseButton;
     SeekBar seekBar;
-    private static PlayerFragment fragment = null;
 
     public PlayerFragment() {
         // Required empty public constructor
-    }
-
-    public static PlayerFragment getInstance(){
-        if(fragment == null){
-            fragment = new PlayerFragment();
-            return fragment;
-        }
-        return fragment;
     }
 
     public static PlayerFragment newInstance() {

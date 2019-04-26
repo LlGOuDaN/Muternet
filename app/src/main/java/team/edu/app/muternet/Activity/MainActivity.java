@@ -24,11 +24,15 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        fragmentManager = getSupportFragmentManager();
-        final FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.add(R.id.fragment_container, PlayerFragment.newInstance());
-        ft.commit();
+        final PlayerFragment playerFragment = new PlayerFragment();
+        final ServerFragment serverFragment = new ServerFragment();
+        final ClientFragment clientFragment = new ClientFragment();
 
+        fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().add(R.id.fragment_container, clientFragment,"3").hide(clientFragment).commit();
+        fragmentManager.beginTransaction().add(R.id.fragment_container, serverFragment, "2").hide(serverFragment).commit();
+        fragmentManager.beginTransaction().add(R.id.fragment_container, playerFragment,"1").commit();
+        fragment = playerFragment;
         bottomNavigation = findViewById(R.id.buttom_navigation);
         bottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -36,17 +40,18 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
                 int id = item.getItemId();
                 switch (id){
                     case R.id.player:
-                        fragment = PlayerFragment.getInstance();
+                        fragmentManager.beginTransaction().hide(fragment).show(playerFragment).commit();
+                        fragment = playerFragment;
                         break;
                     case R.id.server:
-                        fragment = new ServerFragment();
+                        fragmentManager.beginTransaction().hide(fragment).show(serverFragment).commit();
+                        fragment = serverFragment;
                         break;
                     case R.id.client:
-                        fragment = new ClientFragment();
+                        fragmentManager.beginTransaction().hide(fragment).show(clientFragment).commit();
+                        fragment = clientFragment;
                         break;
                 }
-                FragmentTransaction transaction = fragmentManager.beginTransaction();
-                transaction.replace(R.id.fragment_container, fragment).commit();
                 return true;
             }
         });
