@@ -1,15 +1,15 @@
 package team.edu.app.muternet.Fragment;
 
 import android.animation.ObjectAnimator;
-import android.content.Context;
+import android.app.AlertDialog;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,8 +27,11 @@ public class PlayerFragment extends Fragment {
     View view;
     Runnable timer;
     MediaPlayer mediaPlayer;
+    TextView fileNameView;
     PlayPauseButton playPauseButton;
     SeekBar seekBar;
+    ObjectAnimator animator;
+    Uri songUri;
 
     public PlayerFragment() {
         // Required empty public constructor
@@ -50,6 +53,7 @@ public class PlayerFragment extends Fragment {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_player, container, false);
         //setup
+        fileNameView = view.findViewById(R.id.file_name);
         setUpMediaPlayer();
         setUpPlayPauseButton();
         setUpSeekBar();
@@ -61,22 +65,58 @@ public class PlayerFragment extends Fragment {
         //Set Play Pause Button Color
         playPauseButton = view.findViewById(R.id.play_pause_button);
         playPauseButton.setColor(Color.WHITE);
-
         final ImageView imageView = view.findViewById(R.id.image_view);
-        final ObjectAnimator animator = ObjectAnimator.ofFloat(imageView,"rotation",0,360);
-        animator.setDuration(mediaPlayer.getDuration()/10);
+        animator = ObjectAnimator.ofFloat(imageView, "rotation", 0, 360);
+        animator.setDuration(10000);
         animator.setRepeatCount(ObjectAnimator.INFINITE);
         animator.setInterpolator(new LinearInterpolator());
-
+        final Parcelable s = playPauseButton.onSaveInstanceState();
         playPauseButton.setOnControlStatusChangeListener(new PlayPauseButton.OnControlStatusChangeListener() {
             @Override
             public void onStatusChange(View view, boolean state) {
-                if(state){
+                if (state) {
+                    if (getArguments() == null || getArguments().getParcelable("musicURI") == null) {
+                        AlertDialog alertDialog = new AlertDialog.Builder(getContext()).create();
+                        alertDialog.setTitle("Alert");
+                        alertDialog.setMessage("Please select a music file to play");
+                        alertDialog.show();
+                        playPauseButton.onRestoreInstanceState(s);
+                        return;
+                    }
+
+                    if (songUri == null) {
+                        songUri = getArguments().getParcelable("musicURI");
+                        try {
+                            mediaPlayer.setDataSource(getContext(), songUri);
+                            mediaPlayer.prepare();
+                            fileNameView.setText(getArguments().getString("musicName"));
+                            if(seekBar!=null){
+                                seekBar.setMax(mediaPlayer.getDuration()/1000);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if (!songUri.toString().equals(getArguments().getParcelable("musicURI").toString())) {
+                        songUri = getArguments().getParcelable("musicURI");
+                        try {
+                            mediaPlayer.reset();
+                            mediaPlayer.setDataSource(getContext(), songUri);
+                            mediaPlayer.prepare();
+                            fileNameView.setText(getArguments().getString("musicName"));
+                            if(seekBar!=null){
+                                seekBar.setMax(mediaPlayer.getDuration()/1000);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     float f = imageView.getRotation();
-                    animator.setFloatValues(f,f+360);
+                    animator.setFloatValues(f, f + 360);
                     animator.start();
                     mediaPlayer.start();
-                }else {
+                } else {
                     animator.pause();
                     mediaPlayer.pause();
                 }
@@ -93,30 +133,36 @@ public class PlayerFragment extends Fragment {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if(mediaPlayer!=null && fromUser){
-                    mediaPlayer.seekTo(progress*1000);
+                if (mediaPlayer != null && fromUser) {
+                    mediaPlayer.seekTo(progress * 1000);
                 }
-                int duration = mediaPlayer.getDuration()/1000;
-                int currentPosition = mediaPlayer.getCurrentPosition()/1000;
-                String timePassed = (currentPosition/60<10?"0"+currentPosition/60:currentPosition/60)+":"
-                        + (currentPosition%60<10?"0"+currentPosition%60:currentPosition%60);
+                if(!mediaPlayer.isPlaying()){
+                    return;
+                }
+                int duration = mediaPlayer.getDuration() / 1000;
+                int currentPosition = mediaPlayer.getCurrentPosition() / 1000;
+                String timePassed = (currentPosition / 60 < 10 ? "0" + currentPosition / 60 : currentPosition / 60) + ":"
+                        + (currentPosition % 60 < 10 ? "0" + currentPosition % 60 : currentPosition % 60);
                 timestampPassed.setText(timePassed);
-                String timeRemain = ((duration-currentPosition)/60<10?"0"+(duration-currentPosition)/60:((duration-currentPosition)/60))+":"
-                        + ((duration-currentPosition)%60<10?"0"+(duration-currentPosition)%60:(duration-currentPosition)%60);
+                String timeRemain = ((duration - currentPosition) / 60 < 10 ? "0" + (duration - currentPosition) / 60 : ((duration - currentPosition) / 60)) + ":"
+                        + ((duration - currentPosition) % 60 < 10 ? "0" + (duration - currentPosition) % 60 : (duration - currentPosition) % 60);
                 timestampRemain.setText(timeRemain);
             }
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) { }
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
 
-        seekBar.setMax(mediaPlayer.getDuration()/1000);
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        seekBar.setProgress(0);
         timer = new Runnable() {
             @Override
             public void run() {
-                if(mediaPlayer!=null){
-                    int currentPosition = mediaPlayer.getCurrentPosition()/1000;
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    int currentPosition = mediaPlayer.getCurrentPosition() / 1000;
                     seekBar.setProgress(currentPosition);
                 }
                 new Handler().postDelayed(timer, 1000);
@@ -128,13 +174,6 @@ public class PlayerFragment extends Fragment {
     private void setUpMediaPlayer() {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioAttributes(new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
-        try {
-            String url = "https://firebasestorage.googleapis.com/v0/b/muternet-cd7bf.appspot.com/o/Alan%20Walker%20-%20Faded.mp3?alt=media&token=3bc99504-fda8-424d-92ef-e2c2abbd13bc";
-            mediaPlayer.setDataSource(url);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
 }
