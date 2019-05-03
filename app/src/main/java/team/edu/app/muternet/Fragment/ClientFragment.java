@@ -126,7 +126,7 @@ public class ClientFragment extends Fragment {
                 clientThread = new ClientThread();
                 thread = new Thread(clientThread);
                 thread.start();
-
+                showMessage("Connected to Server...", clientTextColor);
                 return;
             }
         });

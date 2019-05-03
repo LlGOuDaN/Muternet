@@ -164,6 +164,9 @@ public class PlayerFragment extends Fragment {
                 if (mediaPlayer != null && mediaPlayer.isPlaying()) {
                     int currentPosition = mediaPlayer.getCurrentPosition() / 1000;
                     seekBar.setProgress(currentPosition);
+                }else{
+                    animator.pause();
+                    seekBar.setProgress(0);
                 }
                 new Handler().postDelayed(timer, 1000);
             }
