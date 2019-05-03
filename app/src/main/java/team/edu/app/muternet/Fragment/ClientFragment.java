@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.File;
 import java.net.Socket;
+import java.util.UnknownFormatFlagsException;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -59,6 +60,7 @@ public class ClientFragment extends Fragment {
 
     private int SERVERPORT = 6668;
     private String SERVER_IP = "137.112.219.25";
+
     private ClientThread clientThread;
     private Thread thread;
     private LinearLayout msgList;
@@ -173,8 +175,32 @@ public class ClientFragment extends Fragment {
                     if (socket != null && socket.isConnected()) {
                         showMessage("Server Connected", clientTextColor);
                         InputStream inputStream = socket.getInputStream();
+                        OutputStream outputStream = socket.getOutputStream();
                         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
                         requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+
+                            //Handshake Process
+                            showMessage("Starting handshaking process...",Color.YELLOW);
+                            showMessage("Receiving secret handshaking code: \"Loading......\" ...",Color.YELLOW);
+                            byte[] handshakeMsg = new byte[200];
+                            try {
+                                while(inputStream.available() < 1){}
+                                inputStream.read(handshakeMsg);
+                            }catch(Exception e){}
+
+                            String secretMsg = new String(handshakeMsg).trim();
+                            if(!secretMsg.equals("!@#$%^&*()_+")){
+                            showMessage("Handshaking failed \"WTF who are you?\"",Color.YELLOW);
+                                throw new UnknownFormatFlagsException("Handhsake failed");
+                            }
+                            showMessage("Handshaking success!\"doing good, feeling good~~~\"",Color.YELLOW);
+                            showMessage("Transfering secret handshaking code...",Color.YELLOW);
+
+                            try {
+                                outputStream.write("!@#$%^&*()_+".getBytes());
+                            }catch(Exception e){}
+//                          showMessage(secretMsg,Color.YELLOW);
+                            //Handshaking done
 
 
                         while (inputStream != null) {
