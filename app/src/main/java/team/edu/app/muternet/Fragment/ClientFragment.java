@@ -8,8 +8,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +19,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,7 +38,10 @@ import java.net.UnknownHostException;
 import java.util.Calendar;
 
 import team.edu.app.muternet.Activity.MainActivity;
+import team.edu.app.muternet.DBConstants;
 import team.edu.app.muternet.R;
+import team.edu.app.muternet.model.Group;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
@@ -38,7 +49,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.File;
 import java.net.Socket;
-
+import java.util.UnknownFormatFlagsException;
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
@@ -52,13 +63,14 @@ public class ClientFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
-
+    CollectionReference groupRef = FirebaseFirestore.getInstance().collection(DBConstants.GROUP_COLLECTION);
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
 
-    public static final int SERVERPORT = 9997;
-    public static final String SERVER_IP = "137.112.226.155";
+    private int SERVERPORT = 6668;
+    private String SERVER_IP = "137.112.219.25";
+    private  String groupName;
     private ClientThread clientThread;
     private Thread thread;
     private LinearLayout msgList;
@@ -66,6 +78,9 @@ public class ClientFragment extends Fragment {
     private int clientTextColor = Color.GREEN;
     private EditText edMessage;
     private OnClientFragmentInteractionListener mListener;
+    private EditText IP_Addr;
+    private EditText IP_Port;
+    private EditText Group_Id;
     Button connectServer;
     Button sendData;
 
@@ -110,18 +125,39 @@ public class ClientFragment extends Fragment {
         handler = new Handler();
         msgList = view.findViewById(R.id.msgList);
         edMessage = view.findViewById(R.id.edMessage);
+        IP_Addr = view.findViewById(R.id.IP_Addr);
+        IP_Port = view.findViewById(R.id.IP_Port);
         connectServer = view.findViewById(R.id.connect_server);
+        Group_Id = view.findViewById(R.id.Group_Id);
         connectServer.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
+
                 msgList.removeAllViews();
-                showMessage("Connecting to Server...", clientTextColor);
-                clientThread = new ClientThread();
-                thread = new Thread(clientThread);
-                thread.start();
-                showMessage("Connected to Server...", clientTextColor);
-                return;
+                groupName = Group_Id.getText().toString();
+                groupRef.document(groupName).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.getResult().exists()){
+                            Log.d("Firebase","Group ID exits");
+                            Group group = task.getResult().toObject(Group.class);
+                            SERVERPORT = group.port;
+                            SERVER_IP = group.address;
+                            showMessage("Connecting to Server at." + SERVER_IP +": "+SERVERPORT, Color.WHITE);
+                            clientThread = new ClientThread();
+                            thread = new Thread(clientThread);
+                            thread.start();
+                            showMessage("Connected to Server...", clientTextColor);
+                            return;
+                        }else {
+                            Log.d("Firebase","Group ID  new");
+
+
+                        }
+                    }
+                });
+
             }
         });
         sendData = view.findViewById(R.id.send_data);
@@ -165,16 +201,41 @@ public class ClientFragment extends Fragment {
                         break;
                     }*/
                     if (socket != null && socket.isConnected()) {
+                        showMessage("Server Connected", clientTextColor);
                         InputStream inputStream = socket.getInputStream();
+                        OutputStream outputStream = socket.getOutputStream();
                         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
                         requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+
+                            //Handshake Process
+                            showMessage("Starting handshaking process...",Color.YELLOW);
+                            showMessage("Receiving secret handshaking code: \"Loading......\" ...",Color.YELLOW);
+                            byte[] handshakeMsg = new byte[200];
+                            try {
+                                while(inputStream.available() < 1){}
+                                inputStream.read(handshakeMsg);
+                            }catch(Exception e){}
+
+                            String secretMsg = new String(handshakeMsg).trim();
+                            if(!secretMsg.equals("!@#$%^&*()_+")){
+                            showMessage("Handshaking failed \"WTF who are you?\"",Color.YELLOW);
+                                throw new UnknownFormatFlagsException("Handhsake failed");
+                            }
+                            showMessage("Handshaking success!\"doing good, feeling good~~~\"",Color.YELLOW);
+                            showMessage("Transfering secret handshaking code...",Color.YELLOW);
+
+                            try {
+                                outputStream.write("!@#$%^&*()_+".getBytes());
+                            }catch(Exception e){}
+//                          showMessage(secretMsg,Color.YELLOW);
+                            //Handshaking done
 
 
                         while (inputStream != null) {
                             if (inputStream.available() > 0) {
                                 InputStream bufferedIn = new BufferedInputStream(inputStream);
 
-                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/music.mp3");
+                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/sampleMusic.mp3");
                                 FileOutputStream fos = new FileOutputStream(file);
                                 BufferedOutputStream bufferedOut = new BufferedOutputStream(fos);
 
