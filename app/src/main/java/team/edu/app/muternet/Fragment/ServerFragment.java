@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.renderscript.ScriptGroup;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
@@ -21,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -61,7 +63,7 @@ public class ServerFragment extends Fragment {
     private ServerSocket serverSocket;
     private Socket tempClientSocket;
     Thread serverThread = null;
-    public static final int SERVER_PORT = 9997;
+    public static final int SERVER_PORT = 10067;
     private LinearLayout msgList;
     private Handler handler;
     private int greenColor = Color.GREEN;
@@ -275,12 +277,38 @@ public class ServerFragment extends Fragment {
 
                 if (clientSocket.isBound()) {
                     OutputStream out = null;
+                    InputStream inMsg = null;
 
                     try{
                         out = clientSocket.getOutputStream();
+                        inMsg = clientSocket.getInputStream();
                     }catch(Exception e){
                         showMessage("Out Error", Color.RED);
                     }
+
+                    //Handshake Process
+                    showMessage("Starting handshaking process...",Color.YELLOW);
+                    showMessage("Sending secret handshaking code: \"whats up dude?\" ...",Color.YELLOW);
+                    try {
+                        out.write("!@#$%^&*()_+".getBytes());
+                    }catch(Exception e){}
+
+                    byte[] handshakeMsg = new byte[200];
+                    try {
+                        while(inMsg.available() < 0){}
+                        inMsg.read(handshakeMsg);
+                    }catch(Exception e){}
+
+                    String secretMsg = new String(handshakeMsg);
+                    showMessage(secretMsg,Color.YELLOW);
+                    if(!secretMsg.equals("+_)(*&^%$#@!")){
+                        showMessage("Handshaking failed \"WTF who are you?\"",Color.YELLOW);
+                        //throw new UnknownFormatFlagsException("Handhsake failed");
+                    }
+                    showMessage("Handshaking success!\"doing good, feeling good~~~\"",Color.YELLOW);
+
+
+
 
 
                     buffer = new byte[(int)soundFile.length()];
@@ -290,13 +318,14 @@ public class ServerFragment extends Fragment {
                     try {
                         while ((count = in.read(buffer)) != -1)
                             out.write(buffer, 0, count);
+                            out.flush();
                     } catch(Exception e){
                         showMessage("Transfer Error", Color.RED);
                     }
                     showMessage("Done.", Color.WHITE);
 
                     try {
-                        out.flush();
+
                         clientSocket.close();
                         out.close();
                     } catch(Exception e){}
