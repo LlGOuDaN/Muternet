@@ -8,8 +8,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.renderscript.ScriptGroup;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +19,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -39,7 +47,9 @@ import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.*;
 
+import team.edu.app.muternet.DBConstants;
 import team.edu.app.muternet.R;
+import team.edu.app.muternet.model.Group;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -54,6 +64,7 @@ public class ServerFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+    CollectionReference groupRef = FirebaseFirestore.getInstance().collection(DBConstants.GROUP_COLLECTION);
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -64,11 +75,14 @@ public class ServerFragment extends Fragment {
     private Socket tempClientSocket;
     Thread serverThread = null;
     private int SERVER_PORT = 9997;
+    private String groupName;
     private LinearLayout msgList;
     private Handler handler;
     private int greenColor = Color.GREEN;
     private EditText edMessage;
     private EditText IP_Port;
+    private EditText Group_ID;
+
 
     Button startServer = null;
     Button sendData = null;
@@ -119,13 +133,28 @@ public class ServerFragment extends Fragment {
         handler = new Handler();
         msgList = view.findViewById(R.id.msgList);
         IP_Port = view.findViewById(R.id.IP_Port);
+        Group_ID = view.findViewById(R.id.Group_Id);
         startServer = (Button) view.findViewById(R.id.start_server);
         startServer.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                msgList.removeAllViews();
+                groupName = Group_ID.getText().toString();
                 SERVER_PORT = Integer.parseInt(IP_Port.getText().toString());
+                groupRef.document(groupName).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.getResult().exists()){
+                            Log.d("Firebase","Group ID exits");
+                        }else {
+                            Group group = new Group(getIPAddress(true), SERVER_PORT);
+                            groupRef.document(groupName).set(group);
+                            Log.d("Firebase","Group ID  new");
+                        }
+                    }
+                });
+                msgList.removeAllViews();
+
                 showMessage("Server Started. ", Color.WHITE);
                 showMessage("Server ip: " + getIPAddress(true) + ": " + SERVER_PORT , Color.GREEN);
                 serverThread = new Thread(new ServerThread());
@@ -429,12 +458,21 @@ public class ServerFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         try {
-            if (serverSocket != null)
+            if (serverSocket != null) {
                 serverSocket.close();
+                groupRef.document(groupName).delete();
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
         mListener = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        groupRef.document(groupName).delete();
     }
 
     /**
