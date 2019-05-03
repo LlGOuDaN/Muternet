@@ -60,7 +60,6 @@ public class PlayerFragment extends Fragment {
         return view;
     }
 
-
     private void setUpPlayPauseButton() {
         //Set Play Pause Button Color
         playPauseButton = view.findViewById(R.id.play_pause_button);
