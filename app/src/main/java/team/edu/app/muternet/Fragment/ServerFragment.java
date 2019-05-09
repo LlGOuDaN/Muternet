@@ -285,12 +285,6 @@ public class ServerFragment extends Fragment {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
             this.clientSocket = clientSocket;
-            try {
-                this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-                showMessage("File Transfer Error.", Color.RED);
-            }
             showMessage("Transfering File.", greenColor);
             if (clientSocket.isBound()) {
                 try {
