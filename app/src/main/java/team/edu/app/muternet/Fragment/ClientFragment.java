@@ -28,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -82,6 +83,7 @@ public class ClientFragment extends Fragment {
     private EditText IP_Addr;
     private EditText IP_Port;
     private EditText Group_Id;
+    private Socket serverSocket;
     Button connectServer;
     Button sendData;
 
@@ -189,85 +191,8 @@ public class ClientFragment extends Fragment {
 
             try {
                 InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
-                socket = new Socket(serverAddr, SERVERPORT);
-
-                while (!Thread.currentThread().isInterrupted()) {
-    /*
-                    this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    String message = input.readLine();
-                    if (null == message || "Disconnect".contentEquals(message)) {
-                        Thread.interrupted();
-                        message = "Server Disconnected.";
-                        showMessage(message, Color.RED);
-                        break;
-                    }*/
-                    if (socket != null && socket.isConnected()) {
-                        showMessage("Server Connected", clientTextColor);
-                        InputStream inputStream = socket.getInputStream();
-                        OutputStream outputStream = socket.getOutputStream();
-                        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-                        requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
-
-                        //Handshake Process
-                        showMessage("Starting handshaking process...", Color.YELLOW);
-                        showMessage("Receiving secret handshaking code: \"Loading......\" ...", Color.YELLOW);
-                        byte[] requestMsg = new byte[200];
-                        try {
-                            while (inputStream.available() < 1) {
-                            }
-                            inputStream.read(requestMsg);
-                        } catch (Exception e) {
-                        }
-
-                        String secretMsg = new String(requestMsg).trim();
-                        if (!secretMsg.startsWith("FILE:")) {
-                            showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
-                            Log.d("RECV",secretMsg);
-//                            throw new UnknownFormatFlagsException("Handhsake failed");
-                        }
-                        String fileName = secretMsg.substring(6);
-                        Log.d("RECV",fileName);
-                        showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
-                        showMessage("Transfering secret handshaking code...", Color.YELLOW);
-
-                        try {
-                            outputStream.write("FILE RECV".getBytes());
-                        } catch (Exception e) {
-                        }
-//                          showMessage(secretMsg,Color.YELLOW);
-                        //Handshaking done
-
-
-                        while (inputStream != null) {
-                            if (inputStream.available() > 0) {
-                                InputStream bufferedIn = new BufferedInputStream(inputStream);
-                                Log.d("RECV",Environment.getExternalStorageDirectory().toString() + "/"+fileName);
-                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/"+fileName);
-                                FileOutputStream fos = new FileOutputStream(file);
-                                BufferedOutputStream bufferedOut = new BufferedOutputStream(fos);
-
-
-                                message = "Receieving File.";
-                                showMessage(message, Color.BLUE);
-
-                                int bytesRead;
-                                while ((bytesRead = bufferedIn.read(buffer)) > 0) {
-                                    bufferedOut.write(buffer, 0, bytesRead);
-                                }
-
-                                fos.close();
-                                message = "File Transfer Complete.";
-                                showMessage(message, Color.BLUE);
-                            }
-                        }
-                    }
-                    socket.close();
-                    String message = "Exiting...";
-                    showMessage("Server: " + message, clientTextColor);
-
-                    Thread.interrupted();
-                }
-
+                serverSocket = new Socket(serverAddr, SERVERPORT);
+                recvFile();
             } catch (UnknownHostException e1) {
                 e1.printStackTrace();
             } catch (IOException e1) {
@@ -286,6 +211,7 @@ public class ClientFragment extends Fragment {
                                     new OutputStreamWriter(socket.getOutputStream(), "UTF-8")),
                                     true);
                             out.println(message);
+
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -295,6 +221,169 @@ public class ClientFragment extends Fragment {
         }
 
 
+    }
+
+    void recvFile(){
+        FileThread fileThread = new FileThread(this.serverSocket);
+        new Thread(fileThread).start();
+    }
+    //embedded in recv File
+    class FileThread implements Runnable {
+        Socket socket;
+        private OutputStream outputStream;
+        private InputStream inputStream;
+
+        public FileThread(Socket socket) {
+            this.socket = socket;
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+            if (socket != null && socket.isConnected()) {
+                try {
+                    inputStream = socket.getInputStream();
+                    outputStream = socket.getOutputStream();
+                } catch (Exception e) {
+                    showMessage("Server Socket Not connected", Color.RED);
+                }
+
+            }
+        }
+
+        @Override
+        public void run() {
+            Log.d("ERR","Before RUN");
+            recvFile();
+//            while (!Thread.currentThread().isInterrupted()) {
+//    /*
+//                    this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//                    String message = input.readLine();
+//                    if (null == message || "Disconnect".contentEquals(message)) {
+//                        Thread.interrupted();
+//                        message = "Server Disconnected.";
+//                        showMessage(message, Color.RED);
+//                        break;
+//                    }*/
+//                if (socket != null && socket.isConnected()) {
+//                    showMessage("Server Connected", clientTextColor);
+//                    InputStream inputStream = socket.getInputStream();
+//
+//
+//                    //Handshake Process
+//                    showMessage("Starting handshaking process...", Color.YELLOW);
+//                    showMessage("Receiving secret handshaking code: \"Loading......\" ...", Color.YELLOW);
+//                    byte[] requestMsg = new byte[200];
+//                    try {
+//                        while (inputStream.available() < 1) {
+//                        }
+//                        inputStream.read(requestMsg);
+//                    } catch (Exception e) {
+//                    }
+//
+//                    String secretMsg = new String(requestMsg).trim();
+//                    if (!secretMsg.startsWith("FILE:")) {
+//                        showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
+//                        Log.d("RECV", secretMsg);
+////                            throw new UnknownFormatFlagsException("Handhsake failed");
+//                    }
+//                    String fileName = secretMsg.substring(6);
+//                    Log.d("RECV", fileName);
+//                    showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
+//                    showMessage("Transfering secret handshaking code...", Color.YELLOW);
+//
+//                    try {
+//                        outputStream.write("FILE RECV".getBytes());
+//                    } catch (Exception e) {
+//                    }
+////                          showMessage(secretMsg,Color.YELLOW);
+//                    //Handshaking done
+//
+//
+//                    while (inputStream != null) {
+//                        if (inputStream.available() > 0) {
+//                            InputStream bufferedIn = new BufferedInputStream(inputStream);
+//                            Log.d("RECV", Environment.getExternalStorageDirectory().toString() + "/" + fileName);
+//                            File file = new File(Environment.getExternalStorageDirectory().toString() + "/" + fileName);
+//                            FileOutputStream fos = new FileOutputStream(file);
+//                            BufferedOutputStream bufferedOut = new BufferedOutputStream(fos);
+//
+//
+//                            message = "Receieving File.";
+//                            showMessage(message, Color.BLUE);
+//
+//                            int bytesRead;
+//                            while ((bytesRead = bufferedIn.read(buffer)) > 0) {
+//                                bufferedOut.write(buffer, 0, bytesRead);
+//                            }
+//
+//                            fos.close();
+//                            message = "File Transfer Complete.";
+//                            showMessage(message, Color.BLUE);
+//                        }
+//                    }
+//                }
+//                socket.close();
+//                String message = "Exiting...";
+//                showMessage("Server: " + message, clientTextColor);
+//
+//                Thread.interrupted();
+//            }
+
+        }
+
+        void recvFile() {
+            Log.d("ERR","insde func");
+            byte[] requestMsg = new byte[200];
+            try {
+                while (inputStream.available() < 1) {
+                }
+                inputStream.read(requestMsg);
+            } catch (Exception e) {
+            }
+
+            String secretMsg = new String(requestMsg).trim();
+            Log.d("ERR","MESSAGE "+ secretMsg);
+            if (!secretMsg.startsWith("FILE:")) {
+                showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
+                Log.d("RECV", secretMsg);
+//                            throw new UnknownFormatFlagsException("Handhsake failed");
+            }
+            String fileName = secretMsg.substring(6);
+            Log.d("ERR","File NAME "+fileName);
+
+            Log.d("RECV", fileName);
+            showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
+            showMessage("Transfering secret handshaking code...", Color.YELLOW);
+
+            try {
+                outputStream.write("FILE RECV".getBytes());
+            } catch (Exception e) {
+            }
+            File file = new File(Environment.getExternalStorageDirectory().toString() + "/" + fileName);
+            FileOutputStream fileOutputStream = null;
+            try{
+                fileOutputStream = new FileOutputStream(file);
+            }catch (Exception e){
+                e.printStackTrace();
+                showMessage("File Error", Color.RED);
+            }
+            int bytesRead;
+            byte buffer[] = new byte[1024];
+            try {
+
+                while (inputStream.available() > 0 && (bytesRead = inputStream.read(buffer))> 0){
+                    fileOutputStream.write(buffer, 0, bytesRead);
+                }
+            }catch (Exception e){
+                showMessage("Transfer Error", Color.RED);
+            }
+
+            showMessage("Done.", Color.WHITE);
+
+            try {
+                fileOutputStream.flush();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public TextView textView(String message, int color) {
