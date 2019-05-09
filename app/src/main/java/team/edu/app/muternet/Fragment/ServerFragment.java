@@ -27,6 +27,8 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -50,6 +52,7 @@ import java.util.*;
 
 import team.edu.app.muternet.DBConstants;
 import team.edu.app.muternet.R;
+import team.edu.app.muternet.Utils;
 import team.edu.app.muternet.model.Group;
 
 /**
@@ -74,6 +77,7 @@ public class ServerFragment extends Fragment {
 
     private ServerSocket serverSocket;
     private Socket tempClientSocket;
+    private Socket clientSocket;
     Thread serverThread = null;
     private int SERVER_PORT = 9997;
     private String groupName;
@@ -145,12 +149,12 @@ public class ServerFragment extends Fragment {
                 groupRef.document(groupName).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if (task.getResult().exists()){
-                            Log.d("Firebase","Group ID exits");
-                        }else {
+                        if (task.getResult().exists()) {
+                            Log.d("Firebase", "Group ID exits");
+                        } else {
                             Group group = new Group(getIPAddress(true), SERVER_PORT);
                             groupRef.document(groupName).set(group);
-                            Log.d("Firebase","Group ID  new");
+                            Log.d("Firebase", "Group ID  new");
                         }
                     }
                 });
@@ -230,99 +234,102 @@ public class ServerFragment extends Fragment {
         }
     }
 
-    //create a text view with colored message
 
-    public TextView textView(String message, int color) {
-        if (null == message || message.trim().isEmpty()) {
-            message = "<Empty Message>";
+        //create a text view with colored message
+
+        public TextView textView (String message,int color){
+            if (null == message || message.trim().isEmpty()) {
+                message = "<Empty Message>";
+            }
+            TextView tv = new TextView(this.getContext());
+            tv.setTextColor(color);
+            tv.setText(message + " [" + Calendar.getInstance().getTime() + "]");
+            tv.setTextSize(20);
+            tv.setPadding(0, 5, 0, 0);
+            return tv;
         }
-        TextView tv = new TextView(this.getContext());
-        tv.setTextColor(color);
-        tv.setText(message + " [" + Calendar.getInstance().getTime() + "]");
-        tv.setTextSize(20);
-        tv.setPadding(0, 5, 0, 0);
-        return tv;
-    }
 
-    public void showMessage(final String message, final int color) {
-        handler.post(new Runnable() {
+        public void showMessage ( final String message, final int color){
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    msgList.addView(textView(message, color));
+                }
+            });
+        }
+
+        class ServerThread implements Runnable {
+
             @Override
             public void run() {
-                msgList.addView(textView(message, color));
-            }
-        });
-    }
-
-    class ServerThread implements Runnable {
-
-        @Override
-        public void run() {
-            Socket socket;
-            try {
-                serverSocket = new ServerSocket(SERVER_PORT);
-                socket = serverSocket.accept();
-                FileTransferThread fileThread = new FileTransferThread(socket);
-                new Thread(fileThread).start();
-            } catch (IOException e) {
-                e.printStackTrace();
-                showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
-            }
-            if (serverSocket != null) {
-                //while (!Thread.currentThread().isInterrupted()) {
+                Socket socket;
                 try {
+                    serverSocket = new ServerSocket(SERVER_PORT);
                     socket = serverSocket.accept();
-                    CommunicationThread commThread = new CommunicationThread(socket);
-                    new Thread(commThread).start();
-
+                    FileTransferThread fileThread = new FileTransferThread(socket);
+                    new Thread(fileThread).start();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
+                    showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
                 }
-                // }
+                if (serverSocket != null) {
+                    //while (!Thread.currentThread().isInterrupted()) {
+                    try {
+                        socket = serverSocket.accept();
+                        CommunicationThread commThread = new CommunicationThread(socket);
+                        new Thread(commThread).start();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
+                    }
+                    // }
+                }
             }
         }
-    }
 
-    class FileTransferThread implements Runnable {
-        private Socket clientSocket;
-        private BufferedReader input;
-        private byte buffer[];
-        private int count;
+        class FileTransferThread implements Runnable {
+            private Socket clientSocket;
+            private BufferedReader input;
+            private byte buffer[];
+            private int count;
 
-        public FileTransferThread(Socket clientSocket){
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
-            this.clientSocket = clientSocket;
-            try {
-                this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-                showMessage("File Transfer Error.", Color.RED);
+            public FileTransferThread(Socket clientSocket) {
+                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+                this.clientSocket = clientSocket;
+                try {
+                    this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    showMessage("File Transfer Error.", Color.RED);
+                }
+                showMessage("Transfering File.", greenColor);
             }
-            showMessage("Transfering File.", greenColor);
-        }
 
-        @Override
-        public void run(){
+            @Override
+            public void run() {
                 ServerSocket socket;
                 FileInputStream in;
-            Uri uri;
-            if (getArguments() == null || (uri = getArguments().getParcelable("musicURI"))==null ) {
-                AlertDialog alertDialog = new AlertDialog.Builder(getContext()).create();
-                alertDialog.setMessage("No File is playing, cannot send file");
-                alertDialog.setTitle("Error");
-                alertDialog.show();
-                return;
-            }
-            Log.d("uriPath", uri.getPath());
-            File soundFile = new File(uri.getPath());
-            showMessage("File: " + soundFile, greenColor);
+                Uri uri;
+                if (getArguments() == null || (uri = getArguments().getParcelable("musicURI")) == null) {
+                    AlertDialog alertDialog = new AlertDialog.Builder(getContext()).create();
+                    alertDialog.setMessage("No File is playing, cannot send file");
+                    alertDialog.setTitle("Error");
+                    alertDialog.show();
+                    return;
+                }
+                Log.d("uriPath", uri.getPath());
+                Log.d("uriPath", Utils.getRealPathFromURI(getContext(), uri));
+//                Log.d("uriPath", Environment.getExternalStorageDirectory().toString());
+                File soundFile = new File(Utils.getRealPathFromURI(getContext(), uri));
+                showMessage("File: " + soundFile, greenColor);
 //                soundFile = new File(Environment.getExternalStorageDirectory().toString() + "/Music/music.mp3");
                 showMessage("File: " + soundFile, greenColor);
 
-                try{
+                try {
                     in = new FileInputStream(soundFile);
-                }catch(Exception e) {
+                } catch (Exception e) {
                     in = null;
                     e.printStackTrace();
                     showMessage("File Not found", Color.RED);
@@ -332,98 +339,96 @@ public class ServerFragment extends Fragment {
                     OutputStream out = null;
                     InputStream inMsg = null;
 
-                    try{
+                    try {
                         out = clientSocket.getOutputStream();
                         inMsg = clientSocket.getInputStream();
-                    }catch(Exception e){
+                    } catch (Exception e) {
                         showMessage("Client Socket not bound", Color.RED);
                     }
 
                     //Handshake Process
-                    showMessage("Starting handshaking process...",Color.YELLOW);
-                    showMessage("Sending secret handshaking code: \"whats up dude?\" ...",Color.YELLOW);
+                    showMessage("Starting handshaking process...", Color.YELLOW);
+                    showMessage("Sending secret handshaking code: \"whats up dude?\" ...", Color.YELLOW);
+//                    String msg = String.format("FILE: %s",Utils.getFileName(getContext(), uri));
                     try {
                         out.write("!@#$%^&*()_+".getBytes());
-                    }catch(Exception e){}
+                    } catch (Exception e) {
+                    }
 
                     byte[] handshakeMsg = new byte[200];
                     try {
-                        while(inMsg.available() < 0){}
+                        while (inMsg.available() < 0) {
+                        }
                         inMsg.read(handshakeMsg);
-                    }catch(Exception e){}
+                    } catch (Exception e) {
+                    }
 
                     String secretMsg = new String(handshakeMsg);
-                    showMessage(secretMsg,Color.YELLOW);
-                    if(!secretMsg.equals("+_)(*&^%$#@!")){
-                        showMessage("Handshaking failed \"WTF who are you?\"",Color.YELLOW);
+                    showMessage(secretMsg, Color.YELLOW);
+                    if (!secretMsg.equals("+_)(*&^%$#@!")) {
+                        showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
                         //throw new UnknownFormatFlagsException("Handhsake failed");
                     }
-                    showMessage("Handshaking success!\"doing good, feeling good~~~\"",Color.YELLOW);
+                    showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
 
 
-                buffer = new byte[(int) soundFile.length()];
+                    buffer = new byte[(int) soundFile.length()];
 
                     try {
                         while ((count = in.read(buffer)) != -1)
                             out.write(buffer, 0, count);
-                            out.flush();
-                    } catch(Exception e){
+                        out.flush();
+                    } catch (Exception e) {
                         showMessage("Transfer Error", Color.RED);
                     }
                     showMessage("Done.", Color.WHITE);
 
                     try {
-
-                        clientSocket.close();
-                        out.close();
-                    } catch(Exception e){}
-                try {
-                    out.flush();
-                    clientSocket.close();
-                    out.close();
-                } catch (Exception e) {
-                }
-
-            }
-        }
-    }
-
-    class CommunicationThread implements Runnable {
-        private Socket clientSocket;
-        private BufferedReader input;
-
-        public CommunicationThread(Socket clientSocket) {
-            this.clientSocket = clientSocket;
-            tempClientSocket = clientSocket;
-            try {
-                this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-                showMessage("Error Connecting to Client!!", Color.RED);
-            }
-            showMessage("Connected to Client!!", greenColor)
-            ;
-        }
-
-        @Override
-        public void run() {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    String read = input.readLine();
-                    if (null == read || "Disconnect".contentEquals(read)) {
-                        Thread.interrupted();
-                        read = "Client Disconnected";
-                        showMessage("Client : " + read, greenColor);
-                        break;
+                        out.flush();
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    showMessage("Client : " + read, greenColor);
+
+                }
+            }
+        }
+
+        class CommunicationThread implements Runnable {
+            private Socket clientSocket;
+            private BufferedReader input;
+
+            public CommunicationThread(Socket clientSocket) {
+                this.clientSocket = clientSocket;
+                tempClientSocket = clientSocket;
+                try {
+                    this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
                 } catch (IOException e) {
                     e.printStackTrace();
+                    showMessage("Error Connecting to Client!!", Color.RED);
                 }
+                showMessage("Connected to Client!!", greenColor)
+                ;
+            }
 
+            @Override
+            public void run() {
+                while (!Thread.currentThread().isInterrupted()) {
+                    try {
+                        String read = input.readLine();
+                        if (null == read || "Disconnect".contentEquals(read)) {
+                            Thread.interrupted();
+                            read = "Client Disconnected";
+                            showMessage("Client : " + read, greenColor);
+                            break;
+                        }
+                        showMessage("Client : " + read, greenColor);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
             }
         }
-    }
 
 //    private String getIpAddress() {
 //        String ip = "";
@@ -456,57 +461,57 @@ public class ServerFragment extends Fragment {
 //        return ip;
 //    }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onServerFragmentInteraction(uri);
-        }
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnServerFragmentInteractionListener) {
-            mListener = (OnServerFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        try {
-            if (serverSocket != null) {
-                serverSocket.close();
-                groupRef.document(groupName).delete();
+        // TODO: Rename method, update argument and hook method into UI event
+        public void onButtonPressed (Uri uri){
+            if (mListener != null) {
+                mListener.onServerFragmentInteraction(uri);
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        mListener = null;
-    }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        groupRef.document(groupName).delete();
-    }
+        @Override
+        public void onAttach (Context context){
+            super.onAttach(context);
+            if (context instanceof OnServerFragmentInteractionListener) {
+                mListener = (OnServerFragmentInteractionListener) context;
+            } else {
+                throw new RuntimeException(context.toString()
+                        + " must implement OnFragmentInteractionListener");
+            }
+        }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnServerFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onServerFragmentInteraction(Uri uri);
+        @Override
+        public void onDetach () {
+            super.onDetach();
+            try {
+                if (serverSocket != null) {
+                    serverSocket.close();
+                    groupRef.document(groupName).delete();
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mListener = null;
+        }
+
+        @Override
+        public void onDestroy () {
+            super.onDestroy();
+            groupRef.document(groupName).delete();
+        }
+
+        /**
+         * This interface must be implemented by activities that contain this
+         * fragment to allow an interaction in this fragment to be communicated
+         * to the activity and potentially other fragments contained in that
+         * activity.
+         * <p>
+         * See the Android Training lesson <a href=
+         * "http://developer.android.com/training/basics/fragments/communicating.html"
+         * >Communicating with Other Fragments</a> for more information.
+         */
+        public interface OnServerFragmentInteractionListener {
+            // TODO: Update argument type and name
+            void onServerFragmentInteraction(Uri uri);
+        }
     }
-}

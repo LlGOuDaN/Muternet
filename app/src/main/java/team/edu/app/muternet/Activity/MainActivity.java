@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
         if(requestCode==1){
             if(resultCode == RESULT_OK){
                 uri = data.getData();
-
+                Log.d("uri",uri.toString());
                 Log.d(">>", "uri "+  getFileName(uri));
                 Bundle bundle = new Bundle();
                 bundle.putParcelable("musicURI", uri);

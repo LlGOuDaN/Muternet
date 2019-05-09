@@ -93,6 +93,7 @@
         android:ems="10"
         android:hint="Group Name"
         android:inputType="textPersonName"
+        android:textColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
