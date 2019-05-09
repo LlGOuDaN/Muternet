@@ -265,29 +265,14 @@ public class ServerFragment extends Fragment {
             Socket socket;
             try {
                 serverSocket = new ServerSocket(SERVER_PORT);
-                socket = serverSocket.accept();
-                FileTransferThread fileThread = new FileTransferThread(socket);
-                new Thread(fileThread).start();
+                clientSocket = serverSocket.accept();
+                sendFile(clientSocket);
             } catch (IOException e) {
                 e.printStackTrace();
                 showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
             }
-            if (serverSocket != null) {
-                //while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    socket = serverSocket.accept();
-                    CommunicationThread commThread = new CommunicationThread(socket);
-                    new Thread(commThread).start();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
-                }
-                // }
-            }
         }
     }
-
     class FileTransferThread implements Runnable {
         private Socket clientSocket;
         private BufferedReader input;
@@ -319,6 +304,12 @@ public class ServerFragment extends Fragment {
 
         @Override
         public void run() {
+            if (getContext() == null)
+            {
+                Log.d("ERR","Context Null");
+            }else{
+                Log.d("ERR",getContext().toString());
+            }
 
             sendLoadedFile();
         }
@@ -333,7 +324,7 @@ public class ServerFragment extends Fragment {
                 return;
             }
             Log.d("uriPath", uri.getPath());
-            Log.d("uriPath", Utils.getRealPathFromURI(getContext(), uri));
+//            Log.d("uriPath", Utils.getRealPathFromURI(context, uri));
 //                Log.d("uriPath", Environment.getExternalStorageDirectory().toString());
 //                File soundFile = new File(Utils.getRealPathFromURI(getContext(), uri));
 
@@ -363,7 +354,11 @@ public class ServerFragment extends Fragment {
 //                        throw new UnknownFormatFlagsException("Recv Name failed");
             }
             showMessage("Handshaking success!", Color.YELLOW);
-
+            Log.d("uriPath",uri.toString());
+            if ((Utils.getRealPathFromURI(getContext(), uri)).isEmpty()){
+                Log.d("uriPath","Is Null");
+//                Log.d("uriPath", )
+            }
             File soundFile = new File(Utils.getRealPathFromURI(getContext(), uri));
             showMessage("File: " + soundFile, greenColor);
 //                soundFile = new File(Environment.getExternalStorageDirectory().toString() + "/Music/music.mp3");
@@ -394,6 +389,12 @@ public class ServerFragment extends Fragment {
             }
         }
     }
+    void sendFile(Socket socket){
+        FileTransferThread fileThread = new FileTransferThread(socket);
+        new Thread(fileThread).start();
+    }
+
+
 
     class CommunicationThread implements Runnable {
         private Socket clientSocket;
