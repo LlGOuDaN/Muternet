@@ -175,6 +175,8 @@ public class ServerFragment extends Fragment {
         edMessage = view.findViewById(R.id.edMessage);
         return view;
     }
+    //get the current IP Address
+    //return: IP Address
     public static String getIPAddress(boolean useIPv4) {
         try {
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
@@ -224,6 +226,8 @@ public class ServerFragment extends Fragment {
             e.printStackTrace();
         }
     }
+
+    //create a text view with colored message
     public TextView textView(String message, int color) {
         if (null == message || message.trim().isEmpty()) {
             message = "<Empty Message>";
@@ -306,7 +310,7 @@ public class ServerFragment extends Fragment {
                 }catch(Exception e) {
                     in = null;
                     e.printStackTrace();
-                    showMessage("In Error", Color.RED);
+                    showMessage("File Not found", Color.RED);
                 }
 
                 if (clientSocket.isBound()) {
@@ -317,7 +321,7 @@ public class ServerFragment extends Fragment {
                         out = clientSocket.getOutputStream();
                         inMsg = clientSocket.getInputStream();
                     }catch(Exception e){
-                        showMessage("Out Error", Color.RED);
+                        showMessage("Client Socket not bound", Color.RED);
                     }
 
                     //Handshake Process
