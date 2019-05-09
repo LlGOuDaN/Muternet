@@ -1,6 +1,7 @@
 package team.edu.app.muternet.Fragment;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
@@ -156,14 +157,14 @@ public class ServerFragment extends Fragment {
                 msgList.removeAllViews();
 
                 showMessage("Server Started. ", Color.WHITE);
-                showMessage("Server ip: " + getIPAddress(true) + ": " + SERVER_PORT , Color.GREEN);
+                showMessage("Server ip: " + getIPAddress(true) + ": " + SERVER_PORT, Color.GREEN);
                 serverThread = new Thread(new ServerThread());
                 serverThread.start();
                 return;
             }
         });
-        sendData = (Button)view.findViewById(R.id.send_data);
-        sendData.setOnClickListener(new Button.OnClickListener(){
+        sendData = (Button) view.findViewById(R.id.send_data);
+        sendData.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -177,6 +178,7 @@ public class ServerFragment extends Fragment {
     }
     //get the current IP Address
     //return: IP Address
+
     public static String getIPAddress(boolean useIPv4) {
         try {
             List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
@@ -186,7 +188,7 @@ public class ServerFragment extends Fragment {
                     if (!addr.isLoopbackAddress()) {
                         String sAddr = addr.getHostAddress();
                         //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
-                        boolean isIPv4 = sAddr.indexOf(':')<0;
+                        boolean isIPv4 = sAddr.indexOf(':') < 0;
 
                         if (useIPv4) {
                             if (isIPv4)
@@ -194,13 +196,14 @@ public class ServerFragment extends Fragment {
                         } else {
                             if (!isIPv4) {
                                 int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
-                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                                return delim < 0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
                             }
                         }
                     }
                 }
             }
-        } catch (Exception ignored) { } // for now eat exceptions
+        } catch (Exception ignored) {
+        } // for now eat exceptions
         return "";
     }
 
@@ -228,13 +231,14 @@ public class ServerFragment extends Fragment {
     }
 
     //create a text view with colored message
+
     public TextView textView(String message, int color) {
         if (null == message || message.trim().isEmpty()) {
             message = "<Empty Message>";
         }
         TextView tv = new TextView(this.getContext());
         tv.setTextColor(color);
-        tv.setText(message + " [" + Calendar.getInstance().getTime() +"]");
+        tv.setText(message + " [" + Calendar.getInstance().getTime() + "]");
         tv.setTextSize(20);
         tv.setPadding(0, 5, 0, 0);
         return tv;
@@ -265,20 +269,21 @@ public class ServerFragment extends Fragment {
             }
             if (serverSocket != null) {
                 //while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        socket = serverSocket.accept();
-                        CommunicationThread commThread = new CommunicationThread(socket);
-                        new Thread(commThread).start();
+                try {
+                    socket = serverSocket.accept();
+                    CommunicationThread commThread = new CommunicationThread(socket);
+                    new Thread(commThread).start();
 
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
-                    }
-               // }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    showMessage("Error Communicating to Client :" + e.getMessage(), Color.RED);
+                }
+                // }
             }
         }
     }
-    class FileTransferThread implements Runnable{
+
+    class FileTransferThread implements Runnable {
         private Socket clientSocket;
         private BufferedReader input;
         private byte buffer[];
@@ -301,8 +306,18 @@ public class ServerFragment extends Fragment {
         public void run(){
                 ServerSocket socket;
                 FileInputStream in;
-
-                File soundFile = new File(Environment.getExternalStorageDirectory().toString() + "/Music/music.mp3");
+            Uri uri;
+            if (getArguments() == null || (uri = getArguments().getParcelable("musicURI"))==null ) {
+                AlertDialog alertDialog = new AlertDialog.Builder(getContext()).create();
+                alertDialog.setMessage("No File is playing, cannot send file");
+                alertDialog.setTitle("Error");
+                alertDialog.show();
+                return;
+            }
+            Log.d("uriPath", uri.getPath());
+            File soundFile = new File(uri.getPath());
+            showMessage("File: " + soundFile, greenColor);
+//                soundFile = new File(Environment.getExternalStorageDirectory().toString() + "/Music/music.mp3");
                 showMessage("File: " + soundFile, greenColor);
 
                 try{
@@ -346,12 +361,7 @@ public class ServerFragment extends Fragment {
                     showMessage("Handshaking success!\"doing good, feeling good~~~\"",Color.YELLOW);
 
 
-
-
-
-                    buffer = new byte[(int)soundFile.length()];
-
-                    showMessage("File Transfering...",Color.WHITE);
+                buffer = new byte[(int) soundFile.length()];
 
                     try {
                         while ((count = in.read(buffer)) != -1)
@@ -367,8 +377,14 @@ public class ServerFragment extends Fragment {
                         clientSocket.close();
                         out.close();
                     } catch(Exception e){}
-
+                try {
+                    out.flush();
+                    clientSocket.close();
+                    out.close();
+                } catch (Exception e) {
                 }
+
+            }
         }
     }
 

@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
         playerFragment = new PlayerFragment();
         playerFragment.setArguments(new Bundle());
         serverFragment = new ServerFragment();
+        serverFragment.setArguments(new Bundle());
         clientFragment = new ClientFragment();
 
         fragmentManager = getSupportFragmentManager();
@@ -104,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
                 bundle.putParcelable("musicURI", uri);
                 bundle.putString("musicName", getFileName(uri));
                 playerFragment.getArguments().putAll(bundle);
+                serverFragment.getArguments().putAll(bundle);
                 AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
                 alertDialog.setTitle("Success!");
                 alertDialog.setMessage("You've already successfully setup the media!\n" +
@@ -146,4 +148,5 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
         }
         return result;
     }
+
 }
