@@ -50,6 +50,7 @@ import java.io.OutputStream;
 import java.io.File;
 import java.net.Socket;
 import java.util.UnknownFormatFlagsException;
+
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
@@ -70,7 +71,7 @@ public class ClientFragment extends Fragment {
 
     private int SERVERPORT = 6668;
     private String SERVER_IP = "137.112.219.25";
-    private  String groupName;
+    private String groupName;
     private ClientThread clientThread;
     private Thread thread;
     private LinearLayout msgList;
@@ -139,19 +140,19 @@ public class ClientFragment extends Fragment {
                 groupRef.document(groupName).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if (task.getResult().exists()){
-                            Log.d("Firebase","Group ID exits");
+                        if (task.getResult().exists()) {
+                            Log.d("Firebase", "Group ID exits");
                             Group group = task.getResult().toObject(Group.class);
                             SERVERPORT = group.port;
                             SERVER_IP = group.address;
-                            showMessage("Connecting to Server at." + SERVER_IP +": "+SERVERPORT, Color.WHITE);
+                            showMessage("Connecting to Server at." + SERVER_IP + ": " + SERVERPORT, Color.WHITE);
                             clientThread = new ClientThread();
                             thread = new Thread(clientThread);
                             thread.start();
                             showMessage("Connected to Server...", clientTextColor);
                             return;
-                        }else {
-                            Log.d("Firebase","Group ID  new");
+                        } else {
+                            Log.d("Firebase", "Group ID  new");
 
 
                         }
@@ -161,7 +162,7 @@ public class ClientFragment extends Fragment {
             }
         });
         sendData = view.findViewById(R.id.send_data);
-        sendData.setOnClickListener(new Button.OnClickListener(){
+        sendData.setOnClickListener(new Button.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -207,35 +208,41 @@ public class ClientFragment extends Fragment {
                         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
                         requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
 
-                            //Handshake Process
-                            showMessage("Starting handshaking process...",Color.YELLOW);
-                            showMessage("Receiving secret handshaking code: \"Loading......\" ...",Color.YELLOW);
-                            byte[] handshakeMsg = new byte[200];
-                            try {
-                                while(inputStream.available() < 1){}
-                                inputStream.read(handshakeMsg);
-                            }catch(Exception e){}
-
-                            String secretMsg = new String(handshakeMsg).trim();
-                            if(!secretMsg.equals("!@#$%^&*()_+")){
-                            showMessage("Handshaking failed \"WTF who are you?\"",Color.YELLOW);
-                                throw new UnknownFormatFlagsException("Handhsake failed");
+                        //Handshake Process
+                        showMessage("Starting handshaking process...", Color.YELLOW);
+                        showMessage("Receiving secret handshaking code: \"Loading......\" ...", Color.YELLOW);
+                        byte[] requestMsg = new byte[200];
+                        try {
+                            while (inputStream.available() < 1) {
                             }
-                            showMessage("Handshaking success!\"doing good, feeling good~~~\"",Color.YELLOW);
-                            showMessage("Transfering secret handshaking code...",Color.YELLOW);
+                            inputStream.read(requestMsg);
+                        } catch (Exception e) {
+                        }
 
-                            try {
-                                outputStream.write("!@#$%^&*()_+".getBytes());
-                            }catch(Exception e){}
+                        String secretMsg = new String(requestMsg).trim();
+                        if (!secretMsg.startsWith("FILE:")) {
+                            showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
+                            Log.d("RECV",secretMsg);
+//                            throw new UnknownFormatFlagsException("Handhsake failed");
+                        }
+                        String fileName = secretMsg.substring(6);
+                        Log.d("RECV",fileName);
+                        showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
+                        showMessage("Transfering secret handshaking code...", Color.YELLOW);
+
+                        try {
+                            outputStream.write("FILE RECV".getBytes());
+                        } catch (Exception e) {
+                        }
 //                          showMessage(secretMsg,Color.YELLOW);
-                            //Handshaking done
+                        //Handshaking done
 
 
                         while (inputStream != null) {
                             if (inputStream.available() > 0) {
                                 InputStream bufferedIn = new BufferedInputStream(inputStream);
-
-                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/sampleMusic.mp3");
+                                Log.d("RECV",Environment.getExternalStorageDirectory().toString() + "/"+fileName);
+                                File file = new File(Environment.getExternalStorageDirectory().toString() + "/"+fileName);
                                 FileOutputStream fos = new FileOutputStream(file);
                                 BufferedOutputStream bufferedOut = new BufferedOutputStream(fos);
 
@@ -244,8 +251,7 @@ public class ClientFragment extends Fragment {
                                 showMessage(message, Color.BLUE);
 
                                 int bytesRead;
-                                while ((bytesRead= bufferedIn.read(buffer)) > 0)
-                                {
+                                while ((bytesRead = bufferedIn.read(buffer)) > 0) {
                                     bufferedOut.write(buffer, 0, bytesRead);
                                 }
 
@@ -275,9 +281,9 @@ public class ClientFragment extends Fragment {
                 @Override
                 public void run() {
                     try {
-                        if ( socket != null) {
+                        if (socket != null) {
                             PrintWriter out = new PrintWriter(new BufferedWriter(
-                                    new OutputStreamWriter(socket.getOutputStream(),"UTF-8")),
+                                    new OutputStreamWriter(socket.getOutputStream(), "UTF-8")),
                                     true);
                             out.println(message);
                         }

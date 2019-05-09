@@ -337,11 +337,11 @@ public class ServerFragment extends Fragment {
 
                 if (clientSocket.isBound()) {
                     OutputStream out = null;
-                    InputStream inMsg = null;
+                    InputStream inputStream = null;
 
                     try {
                         out = clientSocket.getOutputStream();
-                        inMsg = clientSocket.getInputStream();
+                        inputStream = clientSocket.getInputStream();
                     } catch (Exception e) {
                         showMessage("Client Socket not bound", Color.RED);
                     }
@@ -349,27 +349,29 @@ public class ServerFragment extends Fragment {
                     //Handshake Process
                     showMessage("Starting handshaking process...", Color.YELLOW);
                     showMessage("Sending secret handshaking code: \"whats up dude?\" ...", Color.YELLOW);
-//                    String msg = String.format("FILE: %s",Utils.getFileName(getContext(), uri));
+                    String msg = String.format("FILE: %s",Utils.getFileName(getContext(),uri));
                     try {
-                        out.write("!@#$%^&*()_+".getBytes());
+                        out.write(msg.getBytes());
                     } catch (Exception e) {
                     }
 
-                    byte[] handshakeMsg = new byte[200];
+                    byte[] clientResponse = new byte[200];
                     try {
-                        while (inMsg.available() < 0) {
+                        while (inputStream.available() < 0) {
                         }
-                        inMsg.read(handshakeMsg);
+                        inputStream.read(clientResponse);
                     } catch (Exception e) {
+                        e.printStackTrace();
                     }
 
-                    String secretMsg = new String(handshakeMsg);
+                    String secretMsg = new String(clientResponse).trim();
                     showMessage(secretMsg, Color.YELLOW);
-                    if (!secretMsg.equals("+_)(*&^%$#@!")) {
-                        showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
-                        //throw new UnknownFormatFlagsException("Handhsake failed");
+                    if (!secretMsg.equals("FILE RECV")) {
+                        showMessage("Incorrect Message", Color.YELLOW);
+                        Log.d("RECV",secretMsg);
+//                        throw new UnknownFormatFlagsException("Recv Name failed");
                     }
-                    showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
+                    showMessage("Handshaking success!", Color.YELLOW);
 
 
                     buffer = new byte[(int) soundFile.length()];
