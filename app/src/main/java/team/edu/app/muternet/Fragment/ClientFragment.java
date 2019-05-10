@@ -10,6 +10,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -227,6 +228,7 @@ public class ClientFragment extends Fragment {
         FileThread fileThread = new FileThread(this.serverSocket);
         new Thread(fileThread).start();
     }
+
     //embedded in recv File
     class FileThread implements Runnable {
         Socket socket;
@@ -368,13 +370,14 @@ public class ClientFragment extends Fragment {
             int bytesRead;
             byte buffer[] = new byte[1024];
             try {
-
                 while (inputStream.available() > 0 && (bytesRead = inputStream.read(buffer))> 0){
                     fileOutputStream.write(buffer, 0, bytesRead);
                 }
             }catch (Exception e){
                 showMessage("Transfer Error", Color.RED);
             }
+
+//            ((PlayerFragment)getFragmentManager().findFragmentByTag("1")).loadFile(file);
 
             showMessage("Done.", Color.WHITE);
 

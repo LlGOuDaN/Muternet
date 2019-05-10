@@ -23,7 +23,7 @@ import team.edu.app.muternet.Fragment.PlayerFragment;
 import team.edu.app.muternet.Fragment.ServerFragment;
 import team.edu.app.muternet.R;
 
-public class MainActivity extends AppCompatActivity implements ClientFragment.OnClientFragmentInteractionListener, ServerFragment.OnServerFragmentInteractionListener
+public class MainActivity extends AppCompatActivity implements ClientFragment.OnClientFragmentInteractionListener
 {
     private BottomNavigationView bottomNavigation;
     private FragmentManager fragmentManager;
@@ -118,11 +118,6 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
 
     @Override
     public void onClientFragmentInteraction(Uri uri) {
-
-    }
-
-    @Override
-    public void onServerFragmentInteraction(Uri uri) {
 
     }
 

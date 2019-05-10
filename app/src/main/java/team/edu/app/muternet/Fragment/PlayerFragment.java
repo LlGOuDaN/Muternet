@@ -18,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import java.io.File;
 import java.io.IOException;
 
 import jp.co.recruit_lifestyle.android.widget.PlayPauseButton;
@@ -176,6 +177,10 @@ public class PlayerFragment extends Fragment {
     private void setUpMediaPlayer() {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioAttributes(new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
+    }
+
+    public void loadFile(File file){
+        songUri = Uri.fromFile(file);
     }
 
 }
