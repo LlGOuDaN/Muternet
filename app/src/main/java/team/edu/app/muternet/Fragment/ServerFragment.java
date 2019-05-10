@@ -261,6 +261,50 @@ public class ServerFragment extends Fragment {
         }
     }
 
+    class playThread implements Runnable{
+        OutputStream outputStream;
+        @Override
+        public void run() {
+            if (getContext() == null) {
+                Log.d("ERR", "Context Null");
+            } else {
+                Log.d("ERR", getContext().toString());
+            }
+            sendPlayCommand();
+        }
+
+        private void sendPlayCommand() {
+            try {
+                outputStream = clientSocket.getOutputStream();
+                outputStream.write("play".getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    class pauseThread implements Runnable{
+        OutputStream outputStream;
+        @Override
+        public void run() {
+            if (getContext() == null) {
+                Log.d("ERR", "Context Null");
+            } else {
+                Log.d("ERR", getContext().toString());
+            }
+            sendPauseCommand();
+        }
+
+        private void sendPauseCommand() {
+            try {
+                outputStream = clientSocket.getOutputStream();
+                outputStream.write("pause".getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public void onDetach() {
         super.onDetach();
@@ -342,10 +386,13 @@ public class ServerFragment extends Fragment {
     }
 
     public void onPlayerPause() {
+        pauseThread pauseThread = new pauseThread();
+        new Thread(pauseThread).start();
     }
 
     public void onPlayerPlay(){
-
+        playThread playThread = new playThread();
+        new Thread(playThread).start();
     }
 
     public void onPlayerDrag(){

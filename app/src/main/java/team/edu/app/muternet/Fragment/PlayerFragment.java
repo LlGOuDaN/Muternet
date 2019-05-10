@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -116,9 +117,11 @@ public class PlayerFragment extends Fragment {
                     animator.setFloatValues(f, f + 360);
                     animator.start();
                     mediaPlayer.start();
+                    ((ServerFragment)getFragmentManager().findFragmentByTag("2")).onPlayerPlay();
                 } else {
                     animator.pause();
                     mediaPlayer.pause();
+                    ((ServerFragment)getFragmentManager().findFragmentByTag("2")).onPlayerPause();
                 }
             }
         });
@@ -179,8 +182,13 @@ public class PlayerFragment extends Fragment {
         mediaPlayer.setAudioAttributes(new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
     }
 
-    public void loadFile(File file){
-        songUri = Uri.fromFile(file);
+    public void loadFile(File file) throws IOException {
+//        Bundle bundle = new Bundle();
+//        bundle.putParcelable("musicURI", Uri.fromFile(file));
+//        getArguments().putAll(bundle);
+        mediaPlayer.setDataSource(getContext(), Uri.fromFile(file));
+        mediaPlayer.prepare();
+        Log.d("load", "loadFile");
     }
 
 }

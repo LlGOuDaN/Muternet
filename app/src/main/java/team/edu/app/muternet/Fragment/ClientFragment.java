@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -224,7 +225,7 @@ public class ClientFragment extends Fragment {
 
     }
 
-    void recvFile(){
+    void recvFile() {
         FileThread fileThread = new FileThread(this.serverSocket);
         new Thread(fileThread).start();
     }
@@ -252,8 +253,12 @@ public class ClientFragment extends Fragment {
 
         @Override
         public void run() {
-            Log.d("ERR","Before RUN");
-            recvFile();
+            Log.d("ERR", "Before RUN");
+            try {
+                recvFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 //            while (!Thread.currentThread().isInterrupted()) {
 //    /*
 //                    this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -331,8 +336,8 @@ public class ClientFragment extends Fragment {
 
         }
 
-        void recvFile() {
-            Log.d("ERR","insde func");
+        void recvFile() throws IOException {
+            Log.d("ERR", "insde func");
             byte[] requestMsg = new byte[200];
             try {
                 while (inputStream.available() < 1) {
@@ -342,17 +347,17 @@ public class ClientFragment extends Fragment {
             }
 
             String secretMsg = new String(requestMsg).trim();
-            Log.d("ERR","MESSAGE "+ secretMsg);
+            Log.d("ERR", "MESSAGE " + secretMsg);
             if (!secretMsg.startsWith("FILE:")) {
                 showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
                 Log.d("RECV", secretMsg);
 //                            throw new UnknownFormatFlagsException("Handhsake failed");
             }
-            String[] fileSplit = secretMsg.split(":",2);
+            String[] fileSplit = secretMsg.split(":", 2);
             long fileSize = Long.parseLong(fileSplit[0]);
-            Log.d("size",fileSize+"");
+            Log.d("size", fileSize + "");
             String fileName = fileSplit[1].substring(6);
-            Log.d("ERR","File NAME "+fileName);
+            Log.d("ERR", "File NAME " + fileName);
 
             Log.d("RECV", fileName);
             showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
@@ -364,9 +369,9 @@ public class ClientFragment extends Fragment {
             }
             File file = new File(Environment.getExternalStorageDirectory().toString() + "/" + fileName);
             FileOutputStream fileOutputStream = null;
-            try{
+            try {
                 fileOutputStream = new FileOutputStream(file);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
                 showMessage("File Error", Color.RED);
             }
@@ -375,18 +380,18 @@ public class ClientFragment extends Fragment {
             byte buffer[] = new byte[1024];
             try {
 
-                while ((bytesRead = inputStream.read(buffer))> 0){
+                while ((bytesRead = inputStream.read(buffer)) > 0) {
                     total += bytesRead;
                     fileOutputStream.write(buffer, 0, bytesRead);
-                    if(total>=fileSize){
+                    if (total >= fileSize) {
                         break;
                     }
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 showMessage("Transfer Error", Color.RED);
             }
 
-//            ((PlayerFragment)getFragmentManager().findFragmentByTag("1")).loadFile(file);
+            ((PlayerFragment) getFragmentManager().findFragmentByTag("1")).loadFile(file);
 
             showMessage("Done.", Color.WHITE);
 
@@ -394,6 +399,31 @@ public class ClientFragment extends Fragment {
                 fileOutputStream.flush();
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+
+            while (true) {
+                byte[] command = new byte[200];
+                try {
+                    while (inputStream.available() < 1) {
+                    }
+                    inputStream.read(command);
+                } catch (Exception e) {
+                }
+                String cmd = new String(command).trim();
+                MediaPlayer mediaPlayer = ((PlayerFragment) getFragmentManager().findFragmentByTag("1")).mediaPlayer;
+                switch (cmd) {
+                    case "play":
+                        Log.d("command","play"+ cmd);
+                        mediaPlayer.start();
+                        break;
+                    case "pause":
+                        Log.d("command","pause"+ cmd);
+                        mediaPlayer.pause();
+                        break;
+                    default:
+                        Log.d("command", "error"+cmd);
+
+                }
             }
         }
     }
