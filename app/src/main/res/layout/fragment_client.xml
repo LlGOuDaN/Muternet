@@ -18,30 +18,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/Group_Id" />
 
-    <EditText
-        android:id="@+id/edMessage"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/connect_server"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:text="Message from Client"
-        android:textColor="#D2F3EFEF"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/connect_server" />
-
     <ScrollView
         android:id="@+id/scrollView2"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_above="@+id/send_data"
         android:layout_below="@+id/edMessage"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/send_data"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/IP_Addr">
+        app:layout_constraintTop_toBottomOf="@+id/connect_server"
+        app:layout_constraintVertical_bias="0.52">
 
         <LinearLayout
             android:id="@+id/msgList"
@@ -62,37 +50,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
-
-    <EditText
-        android:id="@+id/IP_Addr"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:ems="10"
-        android:hint="IP ADDRESS"
-        android:inputType="textPersonName"
-        android:text="137.112.219.25"
-        android:textColor="#D2F3EFEF"
-        app:layout_constraintEnd_toStartOf="@+id/IP_Port"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/edMessage" />
-
-    <EditText
-        android:id="@+id/IP_Port"
-        android:layout_width="60dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:ems="10"
-        android:hint="PORT"
-        android:inputType="number"
-        android:text="9997"
-        android:textColor="#D2F3EFEF"
-        app:layout_constraintEnd_toEndOf="@+id/scrollView2"
-        app:layout_constraintTop_toBottomOf="@+id/edMessage" />
 
     <EditText
         android:id="@+id/Group_Id"

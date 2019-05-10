@@ -2,23 +2,21 @@ package team.edu.app.muternet.Fragment;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
-import android.renderscript.ScriptGroup;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -27,8 +25,6 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import org.apache.commons.io.FilenameUtils;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -36,7 +32,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
@@ -44,10 +39,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Calendar;
-import java.util.Enumeration;
 import java.util.*;
 
 import team.edu.app.muternet.DBConstants;
@@ -70,6 +62,7 @@ public class ServerFragment extends Fragment {
     private EditText edMessage;
     private EditText IP_Port;
     private EditText Group_ID;
+    private Switch aSwitch;
 
 
     Button startServer = null;
@@ -90,33 +83,45 @@ public class ServerFragment extends Fragment {
         msgList = view.findViewById(R.id.msgList);
         IP_Port = view.findViewById(R.id.IP_Port);
         Group_ID = view.findViewById(R.id.Group_Id);
-        startServer = view.findViewById(R.id.start_server);
-        startServer.setOnClickListener(new Button.OnClickListener() {
+        aSwitch = view.findViewById(R.id.on_switch);
+//        final List<String> group_names = new ArrayList<>();
+        aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
             @Override
-            public void onClick(View v) {
-                groupName = Group_ID.getText().toString();
-                SERVER_PORT = Integer.parseInt(IP_Port.getText().toString());
-                groupRef.document(groupName).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if (task.getResult().exists()) {
-                            Log.d("Firebase", "Group ID exits");
-                        } else {
-                            Group group = new Group(getIPAddress(true), SERVER_PORT);
-                            groupRef.document(groupName).set(group);
-                            Log.d("Firebase", "Group ID  new");
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    groupName = Group_ID.getText().toString();
+                    SERVER_PORT = Integer.parseInt(IP_Port.getText().toString());
+                    groupRef.document(groupName).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                            if (task.getResult().exists()) {
+                                Log.d("Firebase", "Group ID exits");
+                            } else {
+                                Group group = new Group(getIPAddress(true), SERVER_PORT);
+                                groupRef.document(groupName).set(group);
+//                                group_names.add(groupName);
+                                Log.d("Firebase", "Group ID  new");
+                            }
                         }
-                    }
-                });
-                msgList.removeAllViews();
+                    });
+                    msgList.removeAllViews();
 
-                showMessage("Server Started. ", Color.WHITE);
-                showMessage("Server ip: " + getIPAddress(true) + ": " + SERVER_PORT, Color.GREEN);
-                serverThread = new Thread(new ServerThread());
-                serverThread.start();
-                return;
+                    showMessage("Server Started. ", Color.WHITE);
+                    showMessage("Server ip: " + getIPAddress(true) + ": " + SERVER_PORT, Color.GREEN);
+                    serverThread = new Thread(new ServerThread());
+                    serverThread.start();
+                } else {
+                    try {
+                        serverSocket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    groupRef.document(groupName).delete();
+                }
             }
+
+
         });
         sendData = view.findViewById(R.id.send_data);
         sendData.setOnClickListener(new Button.OnClickListener() {
@@ -203,7 +208,7 @@ public class ServerFragment extends Fragment {
             showMessage("Sending secret handshaking code: \"whats up dude?\" ...", Color.YELLOW);
             File soundFile = new File(Utils.getRealPathFromURI(getContext(), uri));
             String header = String.format("FILE: %s", Utils.getFileName(getContext(), uri));
-            header = soundFile.length()+":"+header;
+            header = soundFile.length() + ":" + header;
             try {
                 outputStream.write(header.getBytes());
             } catch (Exception e) {
@@ -261,8 +266,9 @@ public class ServerFragment extends Fragment {
         }
     }
 
-    class playThread implements Runnable{
+    class playThread implements Runnable {
         OutputStream outputStream;
+
         @Override
         public void run() {
             if (getContext() == null) {
@@ -283,8 +289,9 @@ public class ServerFragment extends Fragment {
         }
     }
 
-    class pauseThread implements Runnable{
+    class pauseThread implements Runnable {
         OutputStream outputStream;
+
         @Override
         public void run() {
             if (getContext() == null) {
@@ -390,12 +397,12 @@ public class ServerFragment extends Fragment {
         new Thread(pauseThread).start();
     }
 
-    public void onPlayerPlay(){
+    public void onPlayerPlay() {
         playThread playThread = new playThread();
         new Thread(playThread).start();
     }
 
-    public void onPlayerDrag(){
+    public void onPlayerDrag() {
 
     }
 

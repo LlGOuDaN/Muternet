@@ -23,9 +23,10 @@ import java.io.File;
 import java.io.IOException;
 
 import jp.co.recruit_lifestyle.android.widget.PlayPauseButton;
+import team.edu.app.muternet.player.PlayerController;
 import team.edu.app.muternet.R;
 
-public class PlayerFragment extends Fragment {
+public class PlayerFragment extends Fragment implements PlayerController {
     View view;
     Runnable timer;
     MediaPlayer mediaPlayer;
@@ -186,9 +187,30 @@ public class PlayerFragment extends Fragment {
 //        Bundle bundle = new Bundle();
 //        bundle.putParcelable("musicURI", Uri.fromFile(file));
 //        getArguments().putAll(bundle);
+        mediaPlayer.reset();
         mediaPlayer.setDataSource(getContext(), Uri.fromFile(file));
         mediaPlayer.prepare();
         Log.d("load", "loadFile");
     }
 
+
+    @Override
+    public void play() {
+//        animator.start();
+        mediaPlayer.start();
+    }
+
+    @Override
+    public void pause() {
+//        animator.pause();
+        mediaPlayer.pause();
+    }
+
+    @Override
+    public void load(File file) throws IOException{
+        mediaPlayer.reset();
+        mediaPlayer.setDataSource(getContext(), Uri.fromFile(file));
+        mediaPlayer.prepare();
+        Log.d("load", "loadFile");
+    }
 }

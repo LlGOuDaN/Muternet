@@ -22,9 +22,9 @@ import team.edu.app.muternet.Fragment.ClientFragment;
 import team.edu.app.muternet.Fragment.PlayerFragment;
 import team.edu.app.muternet.Fragment.ServerFragment;
 import team.edu.app.muternet.R;
+import team.edu.app.muternet.player.PlayerUtil;
 
-public class MainActivity extends AppCompatActivity implements ClientFragment.OnClientFragmentInteractionListener
-{
+public class MainActivity extends AppCompatActivity implements ClientFragment.OnClientFragmentInteractionListener {
     private BottomNavigationView bottomNavigation;
     private FragmentManager fragmentManager;
     private PlayerFragment playerFragment;
@@ -32,20 +32,24 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
     private ClientFragment clientFragment;
     private Fragment fragment;
     private Uri uri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         playerFragment = new PlayerFragment();
         playerFragment.setArguments(new Bundle());
+        //set up controller
+        PlayerUtil.getInstance().setUpPlayer(playerFragment);
+
         serverFragment = new ServerFragment();
         serverFragment.setArguments(new Bundle());
         clientFragment = new ClientFragment();
 
         fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().add(R.id.fragment_container, clientFragment,"3").hide(clientFragment).commit();
+        fragmentManager.beginTransaction().add(R.id.fragment_container, clientFragment, "3").hide(clientFragment).commit();
         fragmentManager.beginTransaction().add(R.id.fragment_container, serverFragment, "2").hide(serverFragment).commit();
-        fragmentManager.beginTransaction().add(R.id.fragment_container, playerFragment,"1").commit();
+        fragmentManager.beginTransaction().add(R.id.fragment_container, playerFragment, "1").commit();
         fragment = playerFragment;
 
         bottomNavigation = findViewById(R.id.buttom_navigation);
@@ -53,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 int id = item.getItemId();
-                switch (id){
+                switch (id) {
                     case R.id.player:
                         fragmentManager.beginTransaction().hide(fragment).show(playerFragment).commit();
                         fragment = playerFragment;
@@ -82,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.load_file){
+        if (id == R.id.load_file) {
             Log.d("debug", "load file clicked");
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("audio/*");
@@ -96,11 +100,11 @@ public class MainActivity extends AppCompatActivity implements ClientFragment.On
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode==1){
-            if(resultCode == RESULT_OK){
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
                 uri = data.getData();
-                Log.d("uri",uri.toString());
-                Log.d(">>", "uri "+  getFileName(uri));
+                Log.d("uri", uri.toString());
+                Log.d(">>", "uri " + getFileName(uri));
                 Bundle bundle = new Bundle();
                 bundle.putParcelable("musicURI", uri);
                 bundle.putString("musicName", getFileName(uri));

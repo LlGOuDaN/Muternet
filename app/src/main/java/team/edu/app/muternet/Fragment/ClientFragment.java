@@ -44,6 +44,7 @@ import team.edu.app.muternet.Activity.MainActivity;
 import team.edu.app.muternet.DBConstants;
 import team.edu.app.muternet.R;
 import team.edu.app.muternet.model.Group;
+import team.edu.app.muternet.player.PlayerUtil;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -68,9 +69,6 @@ public class ClientFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
     CollectionReference groupRef = FirebaseFirestore.getInstance().collection(DBConstants.GROUP_COLLECTION);
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
 
     private int SERVERPORT = 6668;
     private String SERVER_IP = "137.112.219.25";
@@ -82,8 +80,6 @@ public class ClientFragment extends Fragment {
     private int clientTextColor = Color.GREEN;
     private EditText edMessage;
     private OnClientFragmentInteractionListener mListener;
-    private EditText IP_Addr;
-    private EditText IP_Port;
     private EditText Group_Id;
     private Socket serverSocket;
     Button connectServer;
@@ -116,10 +112,6 @@ public class ClientFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
     }
 
     @Override
@@ -130,8 +122,6 @@ public class ClientFragment extends Fragment {
         handler = new Handler();
         msgList = view.findViewById(R.id.msgList);
         edMessage = view.findViewById(R.id.edMessage);
-        IP_Addr = view.findViewById(R.id.IP_Addr);
-        IP_Port = view.findViewById(R.id.IP_Port);
         connectServer = view.findViewById(R.id.connect_server);
         Group_Id = view.findViewById(R.id.Group_Id);
         connectServer.setOnClickListener(new Button.OnClickListener() {
@@ -259,80 +249,6 @@ public class ClientFragment extends Fragment {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-//            while (!Thread.currentThread().isInterrupted()) {
-//    /*
-//                    this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//                    String message = input.readLine();
-//                    if (null == message || "Disconnect".contentEquals(message)) {
-//                        Thread.interrupted();
-//                        message = "Server Disconnected.";
-//                        showMessage(message, Color.RED);
-//                        break;
-//                    }*/
-//                if (socket != null && socket.isConnected()) {
-//                    showMessage("Server Connected", clientTextColor);
-//                    InputStream inputStream = socket.getInputStream();
-//
-//
-//                    //Handshake Process
-//                    showMessage("Starting handshaking process...", Color.YELLOW);
-//                    showMessage("Receiving secret handshaking code: \"Loading......\" ...", Color.YELLOW);
-//                    byte[] requestMsg = new byte[200];
-//                    try {
-//                        while (inputStream.available() < 1) {
-//                        }
-//                        inputStream.read(requestMsg);
-//                    } catch (Exception e) {
-//                    }
-//
-//                    String secretMsg = new String(requestMsg).trim();
-//                    if (!secretMsg.startsWith("FILE:")) {
-//                        showMessage("Handshaking failed \"WTF who are you?\"", Color.YELLOW);
-//                        Log.d("RECV", secretMsg);
-////                            throw new UnknownFormatFlagsException("Handhsake failed");
-//                    }
-//                    String fileName = secretMsg.substring(6);
-//                    Log.d("RECV", fileName);
-//                    showMessage("Handshaking success!\"doing good, feeling good~~~\"", Color.YELLOW);
-//                    showMessage("Transfering secret handshaking code...", Color.YELLOW);
-//
-//                    try {
-//                        outputStream.write("FILE RECV".getBytes());
-//                    } catch (Exception e) {
-//                    }
-////                          showMessage(secretMsg,Color.YELLOW);
-//                    //Handshaking done
-//
-//
-//                    while (inputStream != null) {
-//                        if (inputStream.available() > 0) {
-//                            InputStream bufferedIn = new BufferedInputStream(inputStream);
-//                            Log.d("RECV", Environment.getExternalStorageDirectory().toString() + "/" + fileName);
-//                            File file = new File(Environment.getExternalStorageDirectory().toString() + "/" + fileName);
-//                            FileOutputStream fos = new FileOutputStream(file);
-//                            BufferedOutputStream bufferedOut = new BufferedOutputStream(fos);
-//
-//
-//                            message = "Receieving File.";
-//                            showMessage(message, Color.BLUE);
-//
-//                            int bytesRead;
-//                            while ((bytesRead = bufferedIn.read(buffer)) > 0) {
-//                                bufferedOut.write(buffer, 0, bytesRead);
-//                            }
-//
-//                            fos.close();
-//                            message = "File Transfer Complete.";
-//                            showMessage(message, Color.BLUE);
-//                        }
-//                    }
-//                }
-//                socket.close();
-//                String message = "Exiting...";
-//                showMessage("Server: " + message, clientTextColor);
-//
-//                Thread.interrupted();
-//            }
 
         }
 
@@ -410,15 +326,17 @@ public class ClientFragment extends Fragment {
                 } catch (Exception e) {
                 }
                 String cmd = new String(command).trim();
-                MediaPlayer mediaPlayer = ((PlayerFragment) getFragmentManager().findFragmentByTag("1")).mediaPlayer;
+//                MediaPlayer mediaPlayer = ((PlayerFragment) getFragmentManager().findFragmentByTag("1")).mediaPlayer;
                 switch (cmd) {
                     case "play":
                         Log.d("command","play"+ cmd);
-                        mediaPlayer.start();
+                        PlayerUtil.getInstance().play();
+//                        mediaPlayer.start();
                         break;
                     case "pause":
                         Log.d("command","pause"+ cmd);
-                        mediaPlayer.pause();
+                        PlayerUtil.getInstance().pause();
+//                        mediaPlayer.pause();
                         break;
                     default:
                         Log.d("command", "error"+cmd);
@@ -448,12 +366,7 @@ public class ClientFragment extends Fragment {
             }
         });
     }
-//    // TODO: Rename method, update argument and hook method into UI event
-//    public void onButtonPressed(Uri uri) {
-//        if (mListener != null) {
-//            mListener.onClientFragmentInteraction(uri);
-//        }
-//    }
+
 
     @Override
     public void onAttach(Context context) {
@@ -470,6 +383,17 @@ public class ClientFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        try{
+            serverSocket.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     /**
