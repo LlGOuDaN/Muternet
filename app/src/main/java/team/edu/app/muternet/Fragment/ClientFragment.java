@@ -348,7 +348,10 @@ public class ClientFragment extends Fragment {
                 Log.d("RECV", secretMsg);
 //                            throw new UnknownFormatFlagsException("Handhsake failed");
             }
-            String fileName = secretMsg.substring(6);
+            String[] fileSplit = secretMsg.split(":",2);
+            long fileSize = Long.parseLong(fileSplit[0]);
+            Log.d("size",fileSize+"");
+            String fileName = fileSplit[1].substring(6);
             Log.d("ERR","File NAME "+fileName);
 
             Log.d("RECV", fileName);
@@ -368,10 +371,16 @@ public class ClientFragment extends Fragment {
                 showMessage("File Error", Color.RED);
             }
             int bytesRead;
+            int total = 0;
             byte buffer[] = new byte[1024];
             try {
-                while (inputStream.available() > 0 && (bytesRead = inputStream.read(buffer))> 0){
+
+                while ((bytesRead = inputStream.read(buffer))> 0){
+                    total += bytesRead;
                     fileOutputStream.write(buffer, 0, bytesRead);
+                    if(total>=fileSize){
+                        break;
+                    }
                 }
             }catch (Exception e){
                 showMessage("Transfer Error", Color.RED);

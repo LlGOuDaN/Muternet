@@ -201,7 +201,9 @@ public class ServerFragment extends Fragment {
             //Handshake Process
             showMessage("Starting handshaking process...", Color.YELLOW);
             showMessage("Sending secret handshaking code: \"whats up dude?\" ...", Color.YELLOW);
+            File soundFile = new File(Utils.getRealPathFromURI(getContext(), uri));
             String header = String.format("FILE: %s", Utils.getFileName(getContext(), uri));
+            header = soundFile.length()+":"+header;
             try {
                 outputStream.write(header.getBytes());
             } catch (Exception e) {
@@ -230,7 +232,7 @@ public class ServerFragment extends Fragment {
             if ((Utils.getRealPathFromURI(getContext(), uri)).isEmpty()) {
                 Log.d("uriPath", "Is Null");
             }
-            File soundFile = new File(Utils.getRealPathFromURI(getContext(), uri));
+
             showMessage("File: " + soundFile, greenColor);
             FileInputStream fileInputStream;
             try {
