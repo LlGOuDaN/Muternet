@@ -46,6 +46,7 @@ import team.edu.app.muternet.DBConstants;
 import team.edu.app.muternet.R;
 import team.edu.app.muternet.Utils;
 import team.edu.app.muternet.model.Group;
+import team.edu.app.muternet.player.PlayerUtil;
 
 public class ServerFragment extends Fragment {
     CollectionReference groupRef = FirebaseFirestore.getInstance().collection(DBConstants.GROUP_COLLECTION);
@@ -266,6 +267,29 @@ public class ServerFragment extends Fragment {
         }
     }
 
+    class dragThread implements Runnable{
+        OutputStream outputStream;
+
+        @Override
+        public void run() {
+            if (getContext() == null) {
+                Log.d("ERR", "Context Null");
+            } else {
+                Log.d("ERR", getContext().toString());
+            }
+            sendDragCommand();
+        }
+
+        private void sendDragCommand(){
+            try {
+                outputStream = clientSocket.getOutputStream();
+                outputStream.write(("drag:"+PlayerUtil.getInstance().getPosition()).getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     class playThread implements Runnable {
         OutputStream outputStream;
 
@@ -282,7 +306,7 @@ public class ServerFragment extends Fragment {
         private void sendPlayCommand() {
             try {
                 outputStream = clientSocket.getOutputStream();
-                outputStream.write("play".getBytes());
+                outputStream.write(("play:" + PlayerUtil.getInstance().getPosition()).getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -403,7 +427,8 @@ public class ServerFragment extends Fragment {
     }
 
     public void onPlayerDrag() {
-
+        dragThread dragThread = new dragThread();
+        new Thread(dragThread).start();
     }
 
     //Utils

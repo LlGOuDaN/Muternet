@@ -139,6 +139,7 @@ public class PlayerFragment extends Fragment implements PlayerController {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (mediaPlayer != null && fromUser) {
                     mediaPlayer.seekTo(progress * 1000);
+                    ((ServerFragment)getFragmentManager().findFragmentByTag("2")).onPlayerDrag();
                 }
                 if(!mediaPlayer.isPlaying()){
                     return;
@@ -184,9 +185,6 @@ public class PlayerFragment extends Fragment implements PlayerController {
     }
 
     public void loadFile(File file) throws IOException {
-//        Bundle bundle = new Bundle();
-//        bundle.putParcelable("musicURI", Uri.fromFile(file));
-//        getArguments().putAll(bundle);
         mediaPlayer.reset();
         mediaPlayer.setDataSource(getContext(), Uri.fromFile(file));
         mediaPlayer.prepare();
@@ -204,6 +202,16 @@ public class PlayerFragment extends Fragment implements PlayerController {
     public void pause() {
 //        animator.pause();
         mediaPlayer.pause();
+    }
+
+    @Override
+    public int getPosition(){
+        return mediaPlayer.getCurrentPosition();
+    }
+
+    @Override
+    public void seekTo(int t){
+        mediaPlayer.seekTo(t);
     }
 
     @Override

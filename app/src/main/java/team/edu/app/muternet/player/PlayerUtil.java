@@ -29,4 +29,15 @@ public class PlayerUtil implements PlayerController {
     public void load(File file) throws IOException {
         this.controller.load(file);
     }
+
+    @Override
+    public int getPosition() {
+        return controller.getPosition();
+    }
+
+    @Override
+    public void seekTo(int t) {
+        controller.seekTo(t);
+    }
+
 }

@@ -326,20 +326,27 @@ public class ClientFragment extends Fragment {
                 } catch (Exception e) {
                 }
                 String cmd = new String(command).trim();
+                String[] splitCmd = cmd.split(":");
 //                MediaPlayer mediaPlayer = ((PlayerFragment) getFragmentManager().findFragmentByTag("1")).mediaPlayer;
-                switch (cmd) {
+                switch (splitCmd[0]) {
                     case "play":
-                        Log.d("command","play"+ cmd);
+                        Log.d("command", "play" + cmd);
                         PlayerUtil.getInstance().play();
+                        PlayerUtil.getInstance().seekTo(Integer.parseInt(splitCmd[1]));
 //                        mediaPlayer.start();
                         break;
                     case "pause":
-                        Log.d("command","pause"+ cmd);
+                        Log.d("command", "pause" + cmd);
                         PlayerUtil.getInstance().pause();
 //                        mediaPlayer.pause();
                         break;
+                    case "drag":
+                        Log.d("command", "drag" + cmd);
+                        PlayerUtil.getInstance().seekTo(Integer.parseInt(splitCmd[splitCmd.length-1]));
+                        PlayerUtil.getInstance().play();
+                        break;
                     default:
-                        Log.d("command", "error"+cmd);
+                        Log.d("command", "error" + cmd);
 
                 }
             }
@@ -388,9 +395,9 @@ public class ClientFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        try{
+        try {
             serverSocket.close();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

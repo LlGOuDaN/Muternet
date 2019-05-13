@@ -7,5 +7,7 @@ public interface PlayerController {
     public void play();
     public void pause();
     public void load(File file) throws IOException;
+    public int getPosition();
+    public void seekTo(int t);
 
 }
