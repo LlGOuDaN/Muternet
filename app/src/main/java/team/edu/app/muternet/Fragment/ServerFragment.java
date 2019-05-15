@@ -64,7 +64,7 @@ public class ServerFragment extends Fragment {
     private EditText IP_Port;
     private EditText Group_ID;
     private Switch aSwitch;
-
+    private long different;
 
     Button startServer = null;
     Button sendData = null;
@@ -167,7 +167,7 @@ public class ServerFragment extends Fragment {
         private int count;
         private OutputStream outputStream;
         private InputStream inputStream;
-
+        long startTime;
         public FileTransferThread(Socket clientSocket) {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
@@ -210,6 +210,7 @@ public class ServerFragment extends Fragment {
             File soundFile = new File(Utils.getRealPathFromURI(getContext(), uri));
             String header = String.format("FILE: %s", Utils.getFileName(getContext(), uri));
             header = soundFile.length() + ":" + header;
+            startTime = System.currentTimeMillis();
             try {
                 outputStream.write(header.getBytes());
             } catch (Exception e) {
@@ -232,7 +233,7 @@ public class ServerFragment extends Fragment {
                 Log.d("RECV", secretMsg);
                 throw new UnknownFormatFlagsException("Recv Name failed");
             }
-
+            different = System.currentTimeMillis() - startTime;
             showMessage("Handshaking success!", Color.YELLOW);
             Log.d("uriPath", uri.toString());
             if ((Utils.getRealPathFromURI(getContext(), uri)).isEmpty()) {
@@ -266,6 +267,7 @@ public class ServerFragment extends Fragment {
             }
         }
     }
+
 
     class dragThread implements Runnable{
         OutputStream outputStream;
@@ -306,7 +308,7 @@ public class ServerFragment extends Fragment {
         private void sendPlayCommand() {
             try {
                 outputStream = clientSocket.getOutputStream();
-                outputStream.write(("play:" + PlayerUtil.getInstance().getPosition()).getBytes());
+                outputStream.write(("play:" + (PlayerUtil.getInstance().getPosition() + different)).getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
             }
