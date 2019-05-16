@@ -53,7 +53,7 @@ public class ServerFragment extends Fragment {
 
     private ServerSocket serverSocket;
     private Socket tempClientSocket;
-    private Socket clientSocket;
+//    private Socket clientSocket;
     Thread serverThread = null;
     private int SERVER_PORT = 9997;
     private String groupName;
@@ -65,6 +65,7 @@ public class ServerFragment extends Fragment {
     private EditText Group_ID;
     private Switch aSwitch;
     private long different;
+    private List<Socket> clientSockets;
 
     Button startServer = null;
     Button sendData = null;
@@ -85,6 +86,7 @@ public class ServerFragment extends Fragment {
         IP_Port = view.findViewById(R.id.IP_Port);
         Group_ID = view.findViewById(R.id.Group_Id);
         aSwitch = view.findViewById(R.id.on_switch);
+        clientSockets = new ArrayList<Socket>();
 //        final List<String> group_names = new ArrayList<>();
         aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
@@ -113,6 +115,7 @@ public class ServerFragment extends Fragment {
                     serverThread = new Thread(new ServerThread());
                     serverThread.start();
                 } else {
+                    clientSockets = new ArrayList<Socket>();
                     try {
                         serverSocket.close();
                     } catch (IOException e) {
@@ -148,8 +151,13 @@ public class ServerFragment extends Fragment {
             Socket socket;
             try {
                 serverSocket = new ServerSocket(SERVER_PORT);
-                clientSocket = serverSocket.accept();
-                sendFile();
+                while (true){
+                    Socket s = serverSocket.accept();
+                    clientSockets.add(s);
+                    Log.d("MUL",s.toString());
+                    sendFile(s);
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
                 showMessage("Error Starting Server : " + e.getMessage(), Color.RED);
@@ -161,7 +169,7 @@ public class ServerFragment extends Fragment {
         File Transfer Thread
     */
     class FileTransferThread implements Runnable {
-        private Socket clientSocket;
+        private Socket cSocket;
         private BufferedReader input;
         private byte buffer[];
         private int count;
@@ -171,7 +179,7 @@ public class ServerFragment extends Fragment {
         public FileTransferThread(Socket clientSocket) {
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
             requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
-            this.clientSocket = clientSocket;
+            this.cSocket = clientSocket;
             showMessage("Transfering File.", greenColor);
             if (clientSocket.isBound()) {
                 try {
@@ -271,7 +279,10 @@ public class ServerFragment extends Fragment {
 
     class dragThread implements Runnable{
         OutputStream outputStream;
-
+        Socket s;
+        dragThread(Socket s){
+            this.s = s;
+        }
         @Override
         public void run() {
             if (getContext() == null) {
@@ -284,7 +295,7 @@ public class ServerFragment extends Fragment {
 
         private void sendDragCommand(){
             try {
-                outputStream = clientSocket.getOutputStream();
+                outputStream = s.getOutputStream();
                 outputStream.write(("drag:"+(PlayerUtil.getInstance().getPosition())).getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -294,7 +305,10 @@ public class ServerFragment extends Fragment {
 
     class playThread implements Runnable {
         OutputStream outputStream;
-
+        Socket s;
+        playThread(Socket s){
+            this.s = s;
+        }
         @Override
         public void run() {
             if (getContext() == null) {
@@ -307,7 +321,7 @@ public class ServerFragment extends Fragment {
 
         private void sendPlayCommand() {
             try {
-                outputStream = clientSocket.getOutputStream();
+                outputStream = s.getOutputStream();
                 Log.d("diff", ""+ different);
                 outputStream.write(("play:" + (PlayerUtil.getInstance().getPosition())).getBytes());
                 Log.d("diff", "play:" + (PlayerUtil.getInstance().getPosition() + different/2));
@@ -319,7 +333,10 @@ public class ServerFragment extends Fragment {
 
     class pauseThread implements Runnable {
         OutputStream outputStream;
-
+        Socket s;
+        pauseThread(Socket s){
+            this.s = s;
+        }
         @Override
         public void run() {
             if (getContext() == null) {
@@ -332,7 +349,7 @@ public class ServerFragment extends Fragment {
 
         private void sendPauseCommand() {
             try {
-                outputStream = clientSocket.getOutputStream();
+                outputStream = s.getOutputStream();
                 outputStream.write("pause".getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -415,24 +432,31 @@ public class ServerFragment extends Fragment {
 
     //Listener-Methods and thread opeartions
 
-    public void sendFile() {
+    public void sendFile(Socket clientSocket) {
         FileTransferThread fileThread = new FileTransferThread(clientSocket);
         new Thread(fileThread).start();
     }
 
     public void onPlayerPause() {
-        pauseThread pauseThread = new pauseThread();
-        new Thread(pauseThread).start();
+        for (Socket s:clientSockets){
+            pauseThread pauseThread = new pauseThread(s);
+            new Thread(pauseThread).start();
+        }
+
     }
 
     public void onPlayerPlay() {
-        playThread playThread = new playThread();
-        new Thread(playThread).start();
+        for (Socket s:clientSockets) {
+            playThread playThread = new playThread(s);
+            new Thread(playThread).start();
+        }
     }
 
     public void onPlayerDrag() {
-        dragThread dragThread = new dragThread();
-        new Thread(dragThread).start();
+        for (Socket s:clientSockets) {
+            dragThread dragThread = new dragThread(s);
+            new Thread(dragThread).start();
+        }
     }
 
     //Utils
