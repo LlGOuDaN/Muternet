@@ -332,7 +332,7 @@ public class ClientFragment extends Fragment {
                     case "play":
                         Log.d("command", "play" + cmd);
                         Log.d("command", Integer.parseInt(splitCmd[1])+"");
-                        PlayerUtil.getInstance().seekTo(Integer.parseInt(splitCmd[1]));
+                        PlayerUtil.getInstance().seekTo((Integer.parseInt(splitCmd[1])/1000)*1000);
                         PlayerUtil.getInstance().play();
 //                        mediaPlayer.start();
                         break;

@@ -117,7 +117,7 @@ public class PlayerFragment extends Fragment implements PlayerController {
                     float f = imageView.getRotation();
                     animator.setFloatValues(f, f + 360);
                     animator.start();
-                    mediaPlayer.seekTo(mediaPlayer.getCurrentPosition(), MediaPlayer.SEEK_CLOSEST_SYNC);
+                    mediaPlayer.seekTo((mediaPlayer.getCurrentPosition()/1000)*1000, MediaPlayer.SEEK_CLOSEST_SYNC);
                     mediaPlayer.start();
                     Log.d("player", mediaPlayer.getCurrentPosition()+"");
                     ((ServerFragment)getFragmentManager().findFragmentByTag("2")).onPlayerPlay();
@@ -213,7 +213,7 @@ public class PlayerFragment extends Fragment implements PlayerController {
 
     @Override
     public void seekTo(int t){
-        mediaPlayer.seekTo(t, MediaPlayer.SEEK_CLOSEST_SYNC);
+        mediaPlayer.seekTo(t, MediaPlayer.SEEK_PREVIOUS_SYNC);
     }
 
     @Override
