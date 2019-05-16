@@ -331,8 +331,9 @@ public class ClientFragment extends Fragment {
                 switch (splitCmd[0]) {
                     case "play":
                         Log.d("command", "play" + cmd);
-                        PlayerUtil.getInstance().play();
+                        Log.d("command", Integer.parseInt(splitCmd[1])+"");
                         PlayerUtil.getInstance().seekTo(Integer.parseInt(splitCmd[1]));
+                        PlayerUtil.getInstance().play();
 //                        mediaPlayer.start();
                         break;
                     case "pause":

@@ -285,7 +285,7 @@ public class ServerFragment extends Fragment {
         private void sendDragCommand(){
             try {
                 outputStream = clientSocket.getOutputStream();
-                outputStream.write(("drag:"+PlayerUtil.getInstance().getPosition()).getBytes());
+                outputStream.write(("drag:"+(PlayerUtil.getInstance().getPosition())).getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -308,7 +308,9 @@ public class ServerFragment extends Fragment {
         private void sendPlayCommand() {
             try {
                 outputStream = clientSocket.getOutputStream();
-                outputStream.write(("play:" + (PlayerUtil.getInstance().getPosition() + different)).getBytes());
+                Log.d("diff", ""+ different);
+                outputStream.write(("play:" + (PlayerUtil.getInstance().getPosition())).getBytes());
+                Log.d("diff", "play:" + (PlayerUtil.getInstance().getPosition() + different/2));
             } catch (IOException e) {
                 e.printStackTrace();
             }
